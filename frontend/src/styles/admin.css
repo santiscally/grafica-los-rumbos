@@ -1,0 +1,315 @@
+/* admin.css - Añadir a tus estilos */
+/* Estructura general del admin */
+.admin-panel {
+    display: flex;
+    min-height: 100vh;
+  }
+  
+  .admin-sidebar {
+    width: 240px;
+    background-color: #1a2942;
+    color: white;
+    position: fixed;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  }
+  
+  .admin-header {
+    height: 70px;
+    background-color: #1a2942;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  .admin-header h1 {
+    color: white;
+    font-size: 1.4rem;
+    margin: 0;
+  }
+  
+  .admin-sidebar-logo {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  .admin-sidebar-logo img {
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+  }
+  
+  .admin-sidebar-logo h2 {
+    color: white;
+    font-size: 1.2rem;
+    margin: 0;
+  }
+  
+  .admin-nav {
+    padding: 20px 0;
+  }
+  
+  .admin-nav button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.8);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .admin-nav button i {
+    margin-right: 10px;
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+  }
+  
+  .admin-nav button:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+  }
+  
+  .admin-nav button.active {
+    background: #2563eb;
+    color: white;
+  }
+  
+  .admin-content {
+    margin-left: 240px;
+    padding: 20px;
+    width: calc(100% - 240px);
+    background-color: #f3f4f6;
+    min-height: 100vh;
+  }
+  
+  .logout-btn {
+    margin-top: auto;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    color: #f87171;
+    cursor: pointer;
+  }
+  
+  .logout-btn i {
+    margin-right: 10px;
+  }
+  
+  .logout-btn:hover {
+    background: rgba(248, 113, 113, 0.1);
+  }
+  
+  /* Estilos para OrderList */
+  .orders-container {
+    margin-bottom: 30px;
+  }
+  
+  .filter-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .filter-title {
+    margin: 0 0 15px 0;
+    color: #1f2937;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  
+  .filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+  }
+  
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .filter-item label {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: #4b5563;
+  }
+  
+  .filter-select,
+  .filter-input {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.95rem;
+  }
+  
+  .filter-select:focus,
+  .filter-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  }
+  
+  .table-container {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .orders-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .orders-table th {
+    background: #f9fafb;
+    color: #4b5563;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 15px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .orders-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: top;
+  }
+  
+  .orders-table tr:last-child td {
+    border-bottom: none;
+  }
+  
+  .orders-table tr:hover {
+    background-color: #f9fafb;
+  }
+  
+  .order-id {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #6b7280;
+  }
+  
+  .client-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .client-email {
+    font-weight: 500;
+  }
+  
+  .client-phone {
+    color: #6b7280;
+    font-size: 0.9rem;
+  }
+  
+  .products-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .product-item {
+    font-size: 0.9rem;
+  }
+  
+  .product-quantity {
+    color: #6b7280;
+    margin-left: 5px;
+  }
+  
+  .order-total {
+    font-weight: 600;
+    color: #1f2937;
+  }
+  
+  .order-date {
+    color: #6b7280;
+    font-size: 0.9rem;
+  }
+  
+  .status-select {
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    font-size: 0.9rem;
+  }
+  
+  .status-creado {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border-color: #bae6fd;
+  }
+  
+  .status-en-proceso {
+    background-color: #fef3c7;
+    color: #b45309;
+    border-color: #fde68a;
+  }
+  
+  .status-listo {
+    background-color: #dcfce7;
+    color: #16a34a;
+    border-color: #bbf7d0;
+  }
+  
+  .status-anulado {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
+  }
+  
+  .cancel-btn {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+  }
+  
+  .cancel-btn:hover {
+    background-color: #fecaca;
+  }
+  
+  .no-orders {
+    text-align: center;
+    padding: 30px !important;
+    color: #6b7280;
+  }
+  
+  .loading {
+    text-align: center;
+    padding: 30px;
+    color: #6b7280;
+  }
+  
+  .error {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }

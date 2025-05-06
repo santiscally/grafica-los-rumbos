@@ -1,6 +1,6 @@
-// ProductCard.js con enfoque Base64
 import React, { useState, useEffect } from 'react';
 import { fileService } from '../../services/api';
+import '../../styles/products.css';
 
 const ProductCard = ({ product }) => {
   const [imageData, setImageData] = useState(null);
@@ -25,7 +25,6 @@ const ProductCard = ({ product }) => {
   }, [product.image]);
 
   const handleAddToOrder = () => {
-    // Código existente para agregar al carrito
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     
     const existingItem = cart.find(item => item.productId === product._id);
@@ -45,31 +44,46 @@ const ProductCard = ({ product }) => {
     window.dispatchEvent(new Event('cartUpdated'));
   };
 
+  // Formatear precio con separadores de miles
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(price);
+  };
+
   return (
     <div className="product-card">
-      {imageLoading ? (
-        <div className="image-loading">Cargando imagen...</div>
-      ) : (
-        <img 
-          src={imageData || '/placeholder-image.jpg'} 
-          alt={product.name} 
-          className="product-image"
-        />
-      )}
-      <div className="product-info">
-        <h3>{product.name}</h3>
-        <p className="product-description">{product.description}</p>
-        <div className="product-details">
-          <span className="product-year">{product.year}</span>
-          <span className="product-subject">{product.subject}</span>
+      <div className="product-image-container">
+        {imageLoading ? (
+          <div className="image-loading">
+            <div className="image-spinner"></div>
+          </div>
+        ) : (
+          <img 
+            src={imageData || '/placeholder-image.jpg'} 
+            alt={product.name} 
+            className="product-image"
+          />
+        )}
+        <div className="product-badge">
+          <span>{product.year}</span>
         </div>
+      </div>
+      <div className="product-info">
+        <div className="product-category">
+          <span>{product.subject}</span>
+        </div>
+        <h3 className="product-title">{product.name}</h3>
+        <p className="product-description">{product.description}</p>
         <div className="product-footer">
-          <span className="product-price">${product.price}</span>
+          <div className="product-price">${formatPrice(product.price)}</div>
           <button 
-            className="add-to-cart-btn"
+            className="add-button"
             onClick={handleAddToOrder}
           >
-            Agregar al pedido
+            <i className="fas fa-shopping-cart"></i>
+            <span>Agregar</span>
           </button>
         </div>
       </div>

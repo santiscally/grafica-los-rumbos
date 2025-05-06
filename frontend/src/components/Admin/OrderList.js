@@ -76,111 +76,170 @@ const OrderList = () => {
     });
   };
 
+  // Función para obtener la clase de estado
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'creado':
+        return 'bg-info text-dark';
+      case 'en proceso':
+        return 'bg-warning text-dark';
+      case 'listo':
+        return 'bg-success text-white';
+      case 'anulado':
+        return 'bg-danger text-white';
+      default:
+        return 'bg-secondary text-white';
+    }
+  };
+
   return (
-    <div className="order-list">
-      <h2>Gestión de Pedidos</h2>
-      
-      <div className="filters-section">
-        <div className="filter-group">
-          <label>Estado:</label>
-          <select name="status" value={filters.status} onChange={handleFilterChange}>
-            <option value="">Todos</option>
-            <option value="creado">Creado</option>
-            <option value="en proceso">En Proceso</option>
-            <option value="listo">Listo</option>
-            <option value="anulado">Anulado</option>
-          </select>
+    <div>
+      {/* Filtros */}
+      <div className="card mb-4">
+        <div className="card-header">
+          <h5 className="mb-0">Filtros</h5>
         </div>
-        
-        <div className="filter-group">
-          <label>Año escolar:</label>
-          <select name="year" value={filters.year} onChange={handleFilterChange}>
-            <option value="">Todos</option>
-            <option value="1er año">1er año</option>
-            <option value="2do año">2do año</option>
-          </select>
-        </div>
-        
-        <div className="filter-group">
-          <label>Fecha desde:</label>
-          <input 
-            type="date" 
-            name="startDate"
-            value={filters.startDate}
-            onChange={handleFilterChange}
-          />
-        </div>
-        
-        <div className="filter-group">
-          <label>Fecha hasta:</label>
-          <input 
-            type="date"
-            name="endDate"
-            value={filters.endDate}
-            onChange={handleFilterChange}
-          />
+        <div className="card-body">
+          <div className="row g-3">
+            <div className="col-md-3">
+              <label htmlFor="status" className="form-label">Estado:</label>
+              <select
+                id="status"
+                name="status"
+                value={filters.status}
+                onChange={handleFilterChange}
+                className="form-select"
+              >
+                <option value="">Todos</option>
+                <option value="creado">Creado</option>
+                <option value="en proceso">En Proceso</option>
+                <option value="listo">Listo</option>
+                <option value="anulado">Anulado</option>
+              </select>
+            </div>
+            
+            <div className="col-md-3">
+              <label htmlFor="year" className="form-label">Año escolar:</label>
+              <select
+                id="year"
+                name="year"
+                value={filters.year}
+                onChange={handleFilterChange}
+                className="form-select"
+              >
+                <option value="">Todos</option>
+                <option value="1er año">1er año</option>
+                <option value="2do año">2do año</option>
+              </select>
+            </div>
+            
+            <div className="col-md-3">
+              <label htmlFor="startDate" className="form-label">Fecha desde:</label>
+              <input
+                type="date"
+                id="startDate"
+                name="startDate"
+                value={filters.startDate}
+                onChange={handleFilterChange}
+                className="form-control"
+              />
+            </div>
+            
+            <div className="col-md-3">
+              <label htmlFor="endDate" className="form-label">Fecha hasta:</label>
+              <input
+                type="date"
+                id="endDate"
+                name="endDate"
+                value={filters.endDate}
+                onChange={handleFilterChange}
+                className="form-control"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      {loading && <div className="loading">Cargando pedidos...</div>}
-      {error && <div className="error">{error}</div>}
-
-      {!loading && !error && (
-        <table className="orders-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Cliente</th>
-              <th>Productos</th>
-              <th>Total</th>
-              <th>Estado</th>
-              <th>Fecha</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map(order => (
-              <tr key={order._id}>
-                <td>{order._id}</td>
-                <td>
-                  <div>{order.customerEmail}</div>
-                  <div>{order.customerPhone}</div>
-                </td>
-                <td>
-                  {order.products.map((item, index) => (
-                    <div key={index}>
-                      {item.productId.name} x{item.quantity}
-                    </div>
-                  ))}
-                </td>
-                <td>${order.totalPrice}</td>
-                <td>
-                  <select 
-                    value={order.status}
-                    onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                    disabled={order.status === 'anulado'}
-                  >
-                    <option value="creado">Creado</option>
-                    <option value="en proceso">En Proceso</option>
-                    <option value="listo">Listo</option>
-                    <option value="anulado">Anulado</option>
-                  </select>
-                </td>
-                <td>{formatDate(order.createdAt)}</td>
-                <td>
-                  {order.status !== 'anulado' && (
-                    <button 
-                      onClick={() => handleCancelOrder(order._id)}
-                      className="cancel-btn"
-                    >
-                      Anular
-                    </button>
-                  )}
-                </td>
+      {/* Tabla de pedidos */}
+      {loading ? (
+        <div className="d-flex justify-content-center my-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Cargando...</span>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="alert alert-danger" role="alert">
+          <i className="fas fa-exclamation-circle me-2"></i>
+          {error}
+        </div>
+      ) : (
+        <div className="table-responsive">
+          <table className="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Productos</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {orders.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="text-center py-4">
+                    No hay pedidos que coincidan con los filtros
+                  </td>
+                </tr>
+              ) : (
+                orders.map(order => (
+                  <tr key={order._id}>
+                    <td><small className="text-muted font-monospace">{order._id.substring(0, 8)}...</small></td>
+                    <td>
+                      <div>{order.customerEmail}</div>
+                      <small className="text-muted">{order.customerPhone}</small>
+                    </td>
+                    <td>
+                      {order.products.map((item, index) => (
+                        <div key={index} className="small">
+                          {item.productId.name} 
+                          <span className="badge bg-secondary ms-1">x{item.quantity}</span>
+                        </div>
+                      ))}
+                    </td>
+                    <td className="fw-bold">${order.totalPrice.toLocaleString('es-AR')}</td>
+                    <td>
+                      <select
+                        value={order.status}
+                        onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                        disabled={order.status === 'anulado'}
+                        className={`form-select form-select-sm ${getStatusClass(order.status)}`}
+                      >
+                        <option value="creado">Creado</option>
+                        <option value="en proceso">En Proceso</option>
+                        <option value="listo">Listo</option>
+                        <option value="anulado">Anulado</option>
+                      </select>
+                    </td>
+                    <td>{formatDate(order.createdAt)}</td>
+                    <td>
+                      {order.status !== 'anulado' && (
+                        <button
+                          onClick={() => handleCancelOrder(order._id)}
+                          className="btn btn-sm btn-outline-danger"
+                        >
+                          <i className="fas fa-times-circle me-1"></i> Anular
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
