@@ -1,4 +1,5 @@
-FROM node:18-alpine
+# Etapa de construcción
+FROM node:18-alpine AS build
 
 WORKDIR /app
 
@@ -8,6 +9,16 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 3000
+# Construir la app para producción
+RUN npm run build
 
-CMD ["npm", "start"]
+# Etapa de producción
+FROM nginx:alpine
+
+# Copiar la build de React al directorio de Nginx
+COPY --from=build /app/build /usr/share/nginx/html
+
+# El archivo de configuración de Nginx vendrá de un volumen
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
