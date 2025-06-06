@@ -1,3 +1,5 @@
+// frontend/src/components/Admin/OrderList.js - REEMPLAZAR TODO
+
 import React, { useState, useEffect } from 'react';
 import { orderService } from '../../services/api';
 
@@ -7,10 +9,13 @@ const OrderList = () => {
     status: '',
     year: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    customOrder: ''
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingPrice, setEditingPrice] = useState(null);
+  const [newPrice, setNewPrice] = useState('');
 
   useEffect(() => {
     fetchOrders();
@@ -24,6 +29,7 @@ const OrderList = () => {
       if (filters.year) params.year = filters.year;
       if (filters.startDate) params.startDate = filters.startDate;
       if (filters.endDate) params.endDate = filters.endDate;
+      if (filters.customOrder) params.customOrder = filters.customOrder;
       
       const data = await orderService.getOrders(params);
       setOrders(data.orders);
@@ -66,6 +72,17 @@ const OrderList = () => {
     }
   };
 
+  const handlePriceUpdate = async (orderId) => {
+    try {
+      await orderService.updateOrderPrice(orderId, parseFloat(newPrice));
+      setEditingPrice(null);
+      setNewPrice('');
+      fetchOrders();
+    } catch (error) {
+      console.error('Error updating price:', error);
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -76,7 +93,6 @@ const OrderList = () => {
     });
   };
 
-  // Función para obtener la clase de estado
   const getStatusClass = (status) => {
     switch (status) {
       case 'creado':
@@ -119,6 +135,21 @@ const OrderList = () => {
             </div>
             
             <div className="col-md-3">
+              <label htmlFor="customOrder" className="form-label">Tipo de Pedido:</label>
+              <select
+                id="customOrder"
+                name="customOrder"
+                value={filters.customOrder}
+                onChange={handleFilterChange}
+                className="form-select"
+              >
+                <option value="">Todos</option>
+                <option value="false">Catálogo</option>
+                <option value="true">Personalizado</option>
+              </select>
+            </div>
+            
+            <div className="col-md-3">
               <label htmlFor="year" className="form-label">Año escolar:</label>
               <select
                 id="year"
@@ -140,18 +171,6 @@ const OrderList = () => {
                 id="startDate"
                 name="startDate"
                 value={filters.startDate}
-                onChange={handleFilterChange}
-                className="form-control"
-              />
-            </div>
-            
-            <div className="col-md-3">
-              <label htmlFor="endDate" className="form-label">Fecha hasta:</label>
-              <input
-                type="date"
-                id="endDate"
-                name="endDate"
-                value={filters.endDate}
                 onChange={handleFilterChange}
                 className="form-control"
               />
@@ -179,7 +198,8 @@ const OrderList = () => {
               <tr>
                 <th>ID</th>
                 <th>Cliente</th>
-                <th>Productos</th>
+                <th>Tipo</th>
+                <th>Productos/Servicio</th>
                 <th>Total</th>
                 <th>Estado</th>
                 <th>Fecha</th>
@@ -189,7 +209,7 @@ const OrderList = () => {
             <tbody>
               {orders.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-4">
+                  <td colSpan="8" className="text-center py-4">
                     No hay pedidos que coincidan con los filtros
                   </td>
                 </tr>
@@ -198,18 +218,85 @@ const OrderList = () => {
                   <tr key={order._id}>
                     <td><small className="text-muted font-monospace">{order._id.substring(0, 8)}...</small></td>
                     <td>
-                      <div>{order.customerEmail}</div>
-                      <small className="text-muted">{order.customerPhone}</small>
+                      <div>
+                        {order.customerName && <div className="fw-semibold">{order.customerName}</div>}
+                        <div>{order.customerEmail}</div>
+                        <small className="text-muted">{order.customerPhone}</small>
+                      </div>
                     </td>
                     <td>
-                      {order.products.map((item, index) => (
-                        <div key={index} className="small">
-                          {item.productId.name} 
-                          <span className="badge bg-secondary ms-1">x{item.quantity}</span>
-                        </div>
-                      ))}
+                      {order.customOrder ? (
+                        <span className="badge bg-primary">Personalizado</span>
+                      ) : (
+                        <span className="badge bg-secondary">Catálogo</span>
+                      )}
                     </td>
-                    <td className="fw-bold">${order.totalPrice.toLocaleString('es-AR')}</td>
+                    <td>
+                      {order.customOrder ? (
+                        <div>
+                          <div className="fw-semibold">{order.serviceType || 'Servicio personalizado'}</div>
+                          {order.specifications && (
+                            <small className="text-muted">
+                              Cantidad: {order.specifications.cantidad || 'N/A'}
+                              {order.specifications.color && ', Color'}
+                              {order.specifications.dobleCaras && ', Doble cara'}
+                            </small>
+                          )}
+                        </div>
+                      ) : (
+                        order.products.map((item, index) => (
+                          <div key={index} className="small">
+                            {item.productId?.name || item.name || 'Producto'} 
+                            <span className="badge bg-secondary ms-1">x{item.quantity}</span>
+                          </div>
+                        ))
+                      )}
+                    </td>
+                    <td>
+                      {order.customOrder && order.totalPrice === 0 ? (
+                        editingPrice === order._id ? (
+                          <div className="d-flex gap-1">
+                            <input
+                              type="number"
+                              className="form-control form-control-sm"
+                              value={newPrice}
+                              onChange={(e) => setNewPrice(e.target.value)}
+                              style={{width: '80px'}}
+                            />
+                            <button
+                              className="btn btn-sm btn-success"
+                              onClick={() => handlePriceUpdate(order._id)}
+                            >
+                              <i className="fas fa-check"></i>
+                            </button>
+                            <button
+                              className="btn btn-sm btn-secondary"
+                              onClick={() => {
+                                setEditingPrice(null);
+                                setNewPrice('');
+                              }}
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <span className="text-danger">Sin precio</span>
+                            <button
+                              className="btn btn-sm btn-link p-0 ms-2"
+                              onClick={() => {
+                                setEditingPrice(order._id);
+                                setNewPrice('');
+                              }}
+                            >
+                              <i className="fas fa-edit"></i>
+                            </button>
+                          </div>
+                        )
+                      ) : (
+                        <span className="fw-bold">${order.totalPrice.toLocaleString('es-AR')}</span>
+                      )}
+                    </td>
                     <td>
                       <select
                         value={order.status}
@@ -225,14 +312,24 @@ const OrderList = () => {
                     </td>
                     <td>{formatDate(order.createdAt)}</td>
                     <td>
-                      {order.status !== 'anulado' && (
-                        <button
-                          onClick={() => handleCancelOrder(order._id)}
-                          className="btn btn-sm btn-outline-danger"
-                        >
-                          <i className="fas fa-times-circle me-1"></i> Anular
-                        </button>
-                      )}
+                      <div className="d-flex gap-1">
+                        {order.customOrder && order.files && order.files.length > 0 && (
+                          <button
+                            className="btn btn-sm btn-outline-info"
+                            title="Ver archivos"
+                          >
+                            <i className="fas fa-file"></i>
+                          </button>
+                        )}
+                        {order.status !== 'anulado' && (
+                          <button
+                            onClick={() => handleCancelOrder(order._id)}
+                            className="btn btn-sm btn-outline-danger"
+                          >
+                            <i className="fas fa-times-circle"></i>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

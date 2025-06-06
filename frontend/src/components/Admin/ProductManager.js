@@ -60,7 +60,7 @@ const ProductManager = () => {
         ...formData,
         price: parseFloat(formData.price)
       };
-      
+      debugger;
       if (editingProduct) {
         await productService.updateProduct(
           editingProduct._id, 

@@ -1,3 +1,5 @@
+// frontend/src/services/api.js - REEMPLAZAR TODO
+
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || '/api';
@@ -92,6 +94,10 @@ export const orderService = {
   },
   updateOrderStatus: async (id, status) => {
     const response = await api.put(`/orders/${id}/status`, { status });
+    return response.data;
+  },
+  updateOrderPrice: async (id, totalPrice) => {
+    const response = await api.put(`/orders/${id}/price`, { totalPrice });
     return response.data;
   },
   cancelOrder: async (id) => {

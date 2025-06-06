@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { fileService } from '../../services/api';
-import '../../styles/products.css';
 
 const ProductCard = ({ product }) => {
   const [imageData, setImageData] = useState(null);
@@ -44,7 +43,6 @@ const ProductCard = ({ product }) => {
     window.dispatchEvent(new Event('cartUpdated'));
   };
 
-  // Formatear precio con separadores de miles
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-AR', {
       minimumFractionDigits: 2,
@@ -53,39 +51,59 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="product-card">
+    <div className="card h-100 product-card-enhanced">
+      {/* Header con imagen */}
       <div className="product-image-container">
         {imageLoading ? (
-          <div className="image-loading">
-            <div className="image-spinner"></div>
+          <div className="d-flex align-items-center justify-content-center h-100 bg-light">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Cargando...</span>
+            </div>
           </div>
         ) : (
           <img 
-            src={imageData || '/placeholder-image.jpg'} 
+            src={imageData || '/placeholder.jpg'} 
             alt={product.name} 
             className="product-image"
           />
         )}
-        <div className="product-badge">
-          <span>{product.year}</span>
+        {/* Badge de año */}
+        <span className="position-absolute top-0 start-0 m-3 badge bg-primary">
+          {product.year}
+        </span>
+      </div>
+      
+      {/* Contenido de la tarjeta */}
+      <div className="card-body d-flex flex-column">
+        {/* Categoría */}
+        <div className="mb-2">
+          <span className="badge bg-secondary">{product.subject}</span>
+        </div>
+        
+        {/* Título */}
+        <h5 className="card-title fw-semibold mb-2">{product.name}</h5>
+        
+        {/* Descripción */}
+        <p className="card-text text-muted small flex-grow-1">
+          {product.description}
+        </p>
+        
+        {/* Precio */}
+        <div className="d-flex justify-content-between align-items-center mt-3">
+          <span className="h4 mb-0 text-primary fw-bold">
+            ${formatPrice(product.price)}
+          </span>
         </div>
       </div>
-      <div className="product-info">
-        <div className="product-category">
-          <span>{product.subject}</span>
-        </div>
-        <h3 className="product-title">{product.name}</h3>
-        <p className="product-description">{product.description}</p>
-        <div className="product-footer">
-          <div className="product-price">${formatPrice(product.price)}</div>
-          <button 
-            className="add-button"
-            onClick={handleAddToOrder}
-          >
-            <i className="fas fa-shopping-cart"></i>
-            <span>Agregar</span>
-          </button>
-        </div>
+      
+      {/* Footer con botón */}
+      <div className="card-footer bg-transparent">
+        <button 
+          className="btn btn-primary w-100"
+          onClick={handleAddToOrder}
+        >
+          Solicitar Presupuesto
+        </button>
       </div>
     </div>
   );
