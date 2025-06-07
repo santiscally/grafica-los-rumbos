@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Landing from './components/Landing/Landing';
 import Admin from './components/Admin/Admin';
 import PedidoPersonalizado from './components/Landing/PedidoPersonalizado';
+import Precios from './components/Landing/Precios';
 import './styles/App.css';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/pedido-personalizado" element={<PedidoPersonalizado />} />
+          <Route path="/precios" element={<Precios />} />
         </Routes>
       </div>
     </Router>

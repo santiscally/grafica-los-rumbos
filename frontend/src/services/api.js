@@ -15,6 +15,10 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Asegurar que el token se envíe en descargas
+    if (config.responseType === 'blob') {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   error => {
@@ -88,6 +92,14 @@ export const orderService = {
     const response = await api.post('/orders', order);
     return response.data;
   },
+  createCustomOrder: async (formData) => {
+    const response = await api.post('/orders/custom', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
   getOrders: async (params = {}) => {
     const response = await api.get('/orders', { params });
     return response.data;
@@ -107,12 +119,22 @@ export const orderService = {
   sendNotification: async (id, type) => {
     const response = await api.post(`/orders/${id}/notify`, { type });
     return response.data;
+  },
+  getOrderStats: async () => {
+    const response = await api.get('/orders/stats');
+    return response.data;
   }
 };
 
 export const fileService = {
   getFileBase64: async (fileId) => {
     const response = await api.get(`/files/base64/${fileId}`);
+    return response.data;
+  },
+  downloadFile: async (fileId) => {
+    const response = await api.get(`/files/download/${fileId}`, {
+      responseType: 'blob'
+    });
     return response.data;
   }
 };

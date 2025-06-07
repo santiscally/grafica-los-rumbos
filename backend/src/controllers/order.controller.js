@@ -1,8 +1,7 @@
-// backend/controllers/order.controller.js - REEMPLAZAR TODO
-
 const Order = require('../models/order.model');
 const Product = require('../models/product.model');
 const notificationService = require('../services/notification.service');
+const mongoose = require('mongoose');
 
 const orderController = {
   async createOrder(req, res) {
@@ -12,17 +11,14 @@ const orderController = {
       let totalPrice = 0;
       let processedProducts = [];
       
-      // Si es un pedido personalizado
       if (customOrder) {
         processedProducts = products.map(item => ({
           productId: item.productId || 'custom',
           name: item.name,
           quantity: item.quantity
         }));
-        // Para pedidos personalizados, el precio se determina después
         totalPrice = 0;
       } else {
-        // Para pedidos normales, calcular precio
         for (const item of products) {
           const product = await Product.findById(item.productId);
           if (!product) {
@@ -50,13 +46,38 @@ const orderController = {
       
       await order.save();
       
-      // Simular envío de notificación de confirmación
-      console.log(`Order created: ${order._id}`);
+      // Sin console.log
       notificationService.sendOrderConfirmation(order);
       
       res.status(201).json(order);
     } catch (error) {
       res.status(400).json({ message: 'Error creating order', error: error.message });
+    }
+  },
+
+  async createCustomOrder(req, res) {
+    try {
+      const orderData = JSON.parse(req.body.orderData);
+      const uploadedFiles = req.files || [];
+      
+      const filesInfo = uploadedFiles.map(file => ({
+        filename: file.originalname,
+        fileId: file.id,
+        uploadedAt: new Date()
+      }));
+      
+      const order = new Order({
+        ...orderData,
+        files: filesInfo,
+        totalPrice: 0
+      });
+      
+      await order.save();
+      notificationService.sendOrderConfirmation(order);
+      
+      res.status(201).json(order);
+    } catch (error) {
+      res.status(400).json({ message: 'Error creating custom order', error: error.message });
     }
   },
 
@@ -68,10 +89,9 @@ const orderController = {
       if (status) query.status = status;
       if (customOrder !== undefined) query.customOrder = customOrder === 'true';
       
-      let sort = { createdAt: -1 }; // FIFO por defecto
+      let sort = { createdAt: -1 };
       
       if (year || startDate || endDate) {
-        // Buscar productos por año o fecha
         const productQuery = {};
         if (year) productQuery.year = year;
         if (startDate || endDate) {
@@ -83,7 +103,6 @@ const orderController = {
         const relevantProducts = await Product.find(productQuery).select('_id');
         const productIds = relevantProducts.map(p => p._id);
         
-        // Solo aplicar filtro de productos si no es un pedido personalizado
         if (!query.customOrder) {
           query['products.productId'] = { $in: productIds };
         }
@@ -94,12 +113,10 @@ const orderController = {
         .skip((page - 1) * limit)
         .limit(parseInt(limit));
       
-      // Popular productos manualmente
       const populatedOrders = [];
       for (let order of orders) {
         const orderObj = order.toObject();
         
-        // Popular productos solo si no es personalizado
         if (!order.customOrder) {
           for (let item of orderObj.products) {
             if (mongoose.Types.ObjectId.isValid(item.productId)) {
@@ -127,6 +144,72 @@ const orderController = {
     }
   },
 
+  async getOrderStats(req, res) {
+    try {
+      const totalOrders = await Order.countDocuments();
+      const pendingOrders = await Order.countDocuments({ 
+        status: { $in: ['creado', 'en proceso'] } 
+      });
+      const activeProducts = await Product.countDocuments();
+      
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      
+      const monthlyOrders = await Order.find({
+        createdAt: { $gte: startOfMonth },
+        status: { $ne: 'anulado' }
+      });
+      
+      const monthlyRevenue = monthlyOrders.reduce((sum, order) => sum + order.totalPrice, 0);
+      
+      res.json({
+        totalOrders,
+        pendingOrders,
+        activeProducts,
+        monthlyRevenue
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Error getting stats', error: error.message });
+    }
+  },
+
+  async getOrderFiles(req, res) {
+    try {
+      const order = await Order.findById(req.params.id);
+      
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      res.json({ files: order.files || [] });
+    } catch (error) {
+      res.status(500).json({ message: 'Error getting order files', error: error.message });
+    }
+  },
+
+  async downloadOrderFile(req, res) {
+    try {
+      const { orderId, fileId } = req.params;
+      const order = await Order.findById(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      const fileInfo = order.files.find(f => f.fileId.toString() === fileId);
+      
+      if (!fileInfo) {
+        return res.status(404).json({ message: 'File not found in order' });
+      }
+      
+      // Redirigir a la ruta de descarga de archivos
+      res.redirect(`/api/files/${fileId}`);
+    } catch (error) {
+      res.status(500).json({ message: 'Error downloading file', error: error.message });
+    }
+  },
+
   async updateOrderStatus(req, res) {
     try {
       const { status } = req.body;
@@ -145,7 +228,6 @@ const orderController = {
         return res.status(404).json({ message: 'Order not found' });
       }
       
-      // Popular productos si no es personalizado
       const orderObj = order.toObject();
       if (!order.customOrder) {
         for (let item of orderObj.products) {
@@ -158,7 +240,6 @@ const orderController = {
         }
       }
       
-      // Simular notificación si el pedido está listo
       if (status === 'listo') {
         notificationService.sendOrderReady(order);
       }
@@ -195,7 +276,7 @@ const orderController = {
         return res.status(404).json({ message: 'Order not found' });
       }
       
-      const { type } = req.body; // 'email' o 'whatsapp'
+      const { type } = req.body;
       
       await notificationService.sendNotification(order, type);
       
@@ -205,7 +286,6 @@ const orderController = {
     }
   },
 
-  // Nuevo endpoint para actualizar el precio de un pedido personalizado
   async updateOrderPrice(req, res) {
     try {
       const { totalPrice } = req.body;
@@ -226,7 +306,5 @@ const orderController = {
     }
   }
 };
-
-const mongoose = require('mongoose');
 
 module.exports = orderController;

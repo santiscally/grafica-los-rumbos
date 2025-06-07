@@ -11,7 +11,8 @@ const ProductManager = () => {
     price: '',
     image: '',
     year: '',
-    subject: ''
+    subject: '',
+    code: '' // NUEVO
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -99,7 +100,8 @@ const ProductManager = () => {
       price: product.price,
       image: product.image,
       year: product.year,
-      subject: product.subject
+      subject: product.subject,
+      code: product.code || '',
     });
     setShowForm(true);
     setError(null);
@@ -291,6 +293,18 @@ const ProductManager = () => {
                         required
                       />
                     </div>
+                    <div className="col-md-6">
+                      <label htmlFor="code" className="form-label">Código de Producto:</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="code"
+                        name="code"
+                        value={formData.code}
+                        onChange={handleInputChange}
+                        placeholder="Ej: PROD-001"
+                      />
+                    </div>
                     
                     {/* Imagen */}
                     <div className="col-12">
@@ -344,13 +358,14 @@ const ProductManager = () => {
                 <th>Descripción</th>
                 <th>Precio</th>
                 <th>Categorización</th>
+                <th>Código</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-4">
+                  <td colSpan="7" className="text-center py-4">
                     No hay productos disponibles
                   </td>
                 </tr>
@@ -388,6 +403,7 @@ const ProductManager = () => {
                       <span className="badge bg-primary me-2">{product.year}</span>
                       <span className="badge bg-info text-dark">{product.subject}</span>
                     </td>
+                    <td>{product.code || '-'}</td>
                     <td className="align-middle">
                       <div className="btn-group" role="group">
                         <button 

@@ -82,6 +82,39 @@ const OrderList = () => {
       console.error('Error updating price:', error);
     }
   };
+  
+const handleViewFiles = async (order) => {
+  if (order.files && order.files.length > 0) {
+    const filesList = order.files.map((file, index) => (
+      `${index + 1}. ${file.filename} - 
+      <a href="${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/orders/${order._id}/files/${file.fileId}/download" 
+         target="_blank" 
+         rel="noopener noreferrer">
+        Descargar
+      </a>`
+    )).join('<br>');
+    
+    // Crear un div temporal para mostrar los archivos
+    const modalDiv = document.createElement('div');
+    modalDiv.innerHTML = `
+      <div class="modal d-block" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Archivos del Pedido</h5>
+              <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+            </div>
+            <div class="modal-body">
+              ${filesList}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modalDiv);
+  }
+};
+  
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -301,7 +334,6 @@ const OrderList = () => {
                       <select
                         value={order.status}
                         onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                        disabled={order.status === 'anulado'}
                         className={`form-select form-select-sm ${getStatusClass(order.status)}`}
                       >
                         <option value="creado">Creado</option>
@@ -317,8 +349,10 @@ const OrderList = () => {
                           <button
                             className="btn btn-sm btn-outline-info"
                             title="Ver archivos"
+                            onClick={() => handleViewFiles(order)}
                           >
                             <i className="fas fa-file"></i>
+                            <span className="ms-1">{order.files.length}</span>
                           </button>
                         )}
                         {order.status !== 'anulado' && (

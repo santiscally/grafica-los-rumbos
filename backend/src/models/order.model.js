@@ -33,6 +33,7 @@ const orderSchema = new mongoose.Schema({
   },
   files: [{
     filename: String,
+    fileId: mongoose.Schema.Types.ObjectId,
     uploadedAt: {
       type: Date,
       default: Date.now

@@ -1,12 +1,22 @@
+// frontend/src/components/Admin/Admin.js - REEMPLAZAR TODO
+
 import React, { useState, useEffect } from 'react';
 import Login from './Login';
 import OrderList from './OrderList';
 import ProductManager from './ProductManager';
 import NotificationPanel from './NotificationPanel';
+import { orderService } from '../../services/api';
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    activeProducts: 0,
+    pendingOrders: 0,
+    monthlyRevenue: 0
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -14,6 +24,24 @@ const Admin = () => {
       setIsAuthenticated(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'dashboard') {
+      fetchStats();
+    }
+  }, [isAuthenticated, activeTab]);
+
+  const fetchStats = async () => {
+    try {
+      setLoadingStats(true);
+      const statsData = await orderService.getOrderStats();
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   const handleLogin = () => {
     setIsAuthenticated(true);
@@ -27,14 +55,6 @@ const Admin = () => {
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} />;
   }
-
-  // Datos de ejemplo para el dashboard
-  const stats = {
-    totalOrders: 45,
-    activeProducts: 12,
-    pendingOrders: 8,
-    monthlyRevenue: 1250.50
-  };
 
   return (
     <div className="min-h-100vh bg-light">
@@ -116,7 +136,13 @@ const Admin = () => {
                       </div>
                       <div className="ms-3">
                         <p className="text-muted mb-0 small">Pedidos Totales</p>
-                        <h3 className="mb-0">{stats.totalOrders}</h3>
+                        <h3 className="mb-0">
+                          {loadingStats ? (
+                            <span className="spinner-border spinner-border-sm"></span>
+                          ) : (
+                            stats.totalOrders
+                          )}
+                        </h3>
                       </div>
                     </div>
                   </div>
@@ -132,7 +158,13 @@ const Admin = () => {
                       </div>
                       <div className="ms-3">
                         <p className="text-muted mb-0 small">Productos Activos</p>
-                        <h3 className="mb-0">{stats.activeProducts}</h3>
+                        <h3 className="mb-0">
+                          {loadingStats ? (
+                            <span className="spinner-border spinner-border-sm"></span>
+                          ) : (
+                            stats.activeProducts
+                          )}
+                        </h3>
                       </div>
                     </div>
                   </div>
@@ -148,7 +180,13 @@ const Admin = () => {
                       </div>
                       <div className="ms-3">
                         <p className="text-muted mb-0 small">Pedidos Pendientes</p>
-                        <h3 className="mb-0">{stats.pendingOrders}</h3>
+                        <h3 className="mb-0">
+                          {loadingStats ? (
+                            <span className="spinner-border spinner-border-sm"></span>
+                          ) : (
+                            stats.pendingOrders
+                          )}
+                        </h3>
                       </div>
                     </div>
                   </div>
@@ -164,7 +202,13 @@ const Admin = () => {
                       </div>
                       <div className="ms-3">
                         <p className="text-muted mb-0 small">Ingresos del Mes</p>
-                        <h3 className="mb-0">${stats.monthlyRevenue}</h3>
+                        <h3 className="mb-0">
+                          {loadingStats ? (
+                            <span className="spinner-border spinner-border-sm"></span>
+                          ) : (
+                            `$${stats.monthlyRevenue.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`
+                          )}
+                        </h3>
                       </div>
                     </div>
                   </div>
@@ -209,6 +253,18 @@ const Admin = () => {
                 </div>
               </div>
             </div>
+
+            {/* Botón para refrescar estadísticas */}
+            <div className="text-center mt-4">
+              <button 
+                className="btn btn-sm btn-outline-secondary"
+                onClick={fetchStats}
+                disabled={loadingStats}
+              >
+                <i className="fas fa-sync-alt me-2"></i>
+                Actualizar Estadísticas
+              </button>
+            </div>
           </div>
         )}
 
@@ -217,33 +273,6 @@ const Admin = () => {
         {activeTab === 'products' && <ProductManager />}
         {activeTab === 'notifications' && <NotificationPanel />}
       </div>
-
-      <style jsx>{`
-        .stats-card {
-          border: none;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-          transition: all 0.3s ease;
-        }
-        
-        .stats-card:hover {
-          box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-          transform: translateY(-2px);
-        }
-        
-        .stats-icon {
-          width: 60px;
-          height: 60px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1.5rem;
-        }
-        
-        .min-h-100vh {
-          min-height: 100vh;
-        }
-      `}</style>
     </div>
   );
 };

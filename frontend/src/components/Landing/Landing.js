@@ -16,6 +16,8 @@ const Landing = () => {
   const [error, setError] = useState(null);
   const [vistaGrid, setVistaGrid] = useState(true);
   const [activeTab, setActiveTab] = useState('todos');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -37,7 +39,6 @@ const Landing = () => {
       setError(null);
     } catch (err) {
       setError('Error al cargar productos');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -58,6 +59,30 @@ const Landing = () => {
     }).format(price);
   };
 
+  const handleAddToCart = (product) => {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const existingItem = cart.find(item => item.productId === product._id);
+    
+    if (existingItem) {
+      existingItem.quantity += 1;
+    } else {
+      cart.push({
+        productId: product._id,
+        name: product.name,
+        price: product.price,
+        quantity: 1
+      });
+    }
+    
+    localStorage.setItem('cart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('cartUpdated'));
+  };
+
+  const handleViewImage = (imageUrl) => {
+    setSelectedImage(imageUrl);
+    setShowImageModal(true);
+  };
+
   const filteredProducts = activeTab === 'todos' 
     ? products 
     : products.filter(p => p.subject === activeTab);
@@ -73,12 +98,12 @@ const Landing = () => {
               <h1 className="h3 mb-0 fw-bold text-dark">Gráfica Los Rumbos</h1>
             </div>
             <nav className="d-flex align-items-center gap-3">
+              <Link to="/precios" className="btn btn-ghost text-dark">
+                Lista de Precios
+              </Link>
               <Link to="/pedido-personalizado" className="btn btn-outline-primary d-flex align-items-center gap-2">
                 <i className="fas fa-upload"></i>
                 <span className="d-none d-md-inline">Pedido Personalizado</span>
-              </Link>
-              <Link to="/admin" className="btn btn-ghost text-dark">
-                Administración
               </Link>
             </nav>
           </div>
@@ -95,10 +120,10 @@ const Landing = () => {
               <i className="fas fa-upload"></i>
               Subir Archivos
             </Link>
-            <button className="btn btn-outline-light btn-lg d-flex align-items-center gap-2">
+            <a href="#catalogo" className="btn btn-outline-light btn-lg d-flex align-items-center gap-2">
               <i className="fas fa-shopping-cart"></i>
               Ver Catálogo
-            </button>
+            </a>
           </div>
         </div>
       </section>
@@ -107,7 +132,7 @@ const Landing = () => {
       <div className="container my-5">
         <div className="row">
           {/* Productos Section */}
-          <div className="col-lg-9">
+          <div className="col-lg-9" id="catalogo">
             <div className="d-flex justify-content-between align-items-center mb-4">
               <h3 className="h2 fw-bold">Nuestros Servicios</h3>
               <div className="btn-group" role="group">
@@ -205,14 +230,14 @@ const Landing = () => {
                   <div key={product._id} className="card mb-3">
                     <div className="card-body">
                       <div className="row align-items-center">
-                        <div className="col-md-2">
-                          <div className="product-image-small">
-                            <img 
-                              src={product.imageUrl || '/placeholder.jpg'} 
-                              alt={product.name}
-                              className="img-fluid rounded"
-                            />
-                          </div>
+                        <div className="col-md-2 text-center">
+                          <button 
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => handleViewImage(product.imageUrl)}
+                          >
+                            <i className="fas fa-image me-1"></i>
+                            Ver Foto
+                          </button>
                         </div>
                         <div className="col-md-7">
                           <h4 className="h5 fw-semibold">{product.name}</h4>
@@ -228,24 +253,7 @@ const Landing = () => {
                           </div>
                           <button 
                             className="btn btn-primary"
-                            onClick={() => {
-                              const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-                              const existingItem = cart.find(item => item.productId === product._id);
-                              
-                              if (existingItem) {
-                                existingItem.quantity += 1;
-                              } else {
-                                cart.push({
-                                  productId: product._id,
-                                  name: product.name,
-                                  price: product.price,
-                                  quantity: 1
-                                });
-                              }
-                              
-                              localStorage.setItem('cart', JSON.stringify(cart));
-                              window.dispatchEvent(new Event('cartUpdated'));
-                            }}
+                            onClick={() => handleAddToCart(product)}
                           >
                             Solicitar
                           </button>
@@ -266,6 +274,23 @@ const Landing = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal para imagen */}
+      {showImageModal && (
+        <div className="modal d-block" style={{backgroundColor: 'rgba(0,0,0,0.8)'}} onClick={() => setShowImageModal(false)}>
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Vista de Imagen</h5>
+                <button type="button" className="btn-close" onClick={() => setShowImageModal(false)}></button>
+              </div>
+              <div className="modal-body text-center">
+                <img src={selectedImage || '/placeholder.jpg'} alt="Producto" className="img-fluid" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer Mejorado */}
       <footer className="bg-dark text-white py-5 mt-5">

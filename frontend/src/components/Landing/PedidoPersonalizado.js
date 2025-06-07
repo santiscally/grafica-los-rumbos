@@ -1,4 +1,4 @@
-// Crear este archivo en: frontend/src/components/PedidoPersonalizado/PedidoPersonalizado.js
+// frontend/src/components/PedidoPersonalizado/PedidoPersonalizado.js - REEMPLAZAR TODO
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -41,8 +41,16 @@ const PedidoPersonalizado = () => {
     setMessage(null);
 
     try {
-      // Crear el pedido personalizado
-      const pedidoData = {
+      // Crear FormData para enviar archivos
+      const formDataToSend = new FormData();
+      
+      // Agregar archivos
+      archivos.forEach((archivo, index) => {
+        formDataToSend.append('files', archivo);
+      });
+      
+      // Agregar datos del pedido
+      const orderData = {
         customerEmail: formData.email,
         customerPhone: formData.telefono,
         customerName: formData.nombre,
@@ -55,15 +63,18 @@ const PedidoPersonalizado = () => {
           papel: formData.papel,
           observaciones: formData.observaciones
         },
-        files: archivos.map(f => f.name), // Por ahora solo guardamos los nombres
         products: [{
           productId: 'custom',
           name: `Pedido Personalizado - ${formData.tipoServicio}`,
           quantity: parseInt(formData.cantidad) || 1
         }]
       };
-
-      await orderService.createOrder(pedidoData);
+      
+      // Agregar orderData como JSON string
+      formDataToSend.append('orderData', JSON.stringify(orderData));
+      
+      // Enviar pedido con archivos
+      await orderService.createCustomOrder(formDataToSend);
       
       setMessage({ 
         type: 'success', 
@@ -89,6 +100,7 @@ const PedidoPersonalizado = () => {
         type: 'error', 
         text: 'Error al enviar el pedido. Por favor intenta nuevamente.' 
       });
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }

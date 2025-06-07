@@ -26,6 +26,12 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  code: {
+    type: String,
+    required: false,
+    unique: true,
+    sparse: true // Permite valores null únicos
+  },
   date: {
     type: Date,
     default: Date.now
