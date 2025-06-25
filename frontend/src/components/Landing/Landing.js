@@ -335,8 +335,8 @@ const Landing = () => {
             </div>
             <div className="col-md-4 mb-4">
               <h4 className="h5 fw-semibold mb-3">Horarios</h4>
-              <p className="text-secondary mb-1">Lunes a Viernes: 8:00 - 20:00</p>
-              <p className="text-secondary">Sábados: 9:00 - 13:00</p>
+              <p className="text-secondary mb-1">Lunes a Viernes: 9:00 - 19:00</p>
+              <p className="text-secondary">Sábados: 9:00 - 14:00</p>
             </div>
           </div>
           <hr className="border-secondary" />

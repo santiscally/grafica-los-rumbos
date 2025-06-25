@@ -4,6 +4,7 @@ backend/.env
 frontend/.env
 *.env
 
+
 # But allow example files
 !.env.example
 !backend/.env.example

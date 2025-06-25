@@ -199,7 +199,7 @@ const orderReadyTemplate = (order) => {
             <div style="background-color: #f8f9fa; border-radius: 4px; padding: 20px; margin-bottom: 20px;">
                 <h3 style="margin-top: 0; color: #333;">Información de retiro:</h3>
                 <p style="margin: 10px 0;"><strong>Horario:</strong> Lunes a Viernes: 8:00 - 20:00 | Sábados: 9:00 - 13:00</p>
-                <p style="margin: 10px 0;"><strong>Dirección:</strong> [Tu dirección aquí]</p>
+                <p style="margin: 10px 0;"><strong>Dirección:</strong> Armenia 2343, Ciudad Autónoma de Buenos Aires</p>
                 ${order.totalPrice > 0 ? `<p style="margin: 10px 0;"><strong>Total a pagar:</strong> <span style="font-size: 20px; color: #28a745;">$${order.totalPrice.toFixed(2)}</span></p>` : ''}
             </div>
             
@@ -212,8 +212,9 @@ const orderReadyTemplate = (order) => {
             <div style="text-align: center; color: #999; font-size: 14px;">
                 <p>
                     <strong>Gráfica Los Rumbos</strong><br>
-                    Tel: +54 11 4567-8901<br>
-                    info@graficalosrumbos.com
+                    Tel: 4833-4057 / 4832-4854 <br>
+                    WhatsApp: +54 11 6486-8948<br>
+                    info@graficarumbos.com.ar  /  graficarumbos@gmail.com
                 </p>
             </div>
         </div>
