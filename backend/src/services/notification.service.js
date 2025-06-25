@@ -198,7 +198,7 @@ const orderReadyTemplate = (order) => {
             
             <div style="background-color: #f8f9fa; border-radius: 4px; padding: 20px; margin-bottom: 20px;">
                 <h3 style="margin-top: 0; color: #333;">Información de retiro:</h3>
-                <p style="margin: 10px 0;"><strong>Horario:</strong> Lunes a Viernes: 8:00 - 20:00 | Sábados: 9:00 - 13:00</p>
+                <p style="margin: 10px 0;"><strong>Horario:</strong> Lunes a Viernes: 9:00 - 19:00 | Sábados: 9:00 - 14:00</p>
                 <p style="margin: 10px 0;"><strong>Dirección:</strong> Armenia 2343, Ciudad Autónoma de Buenos Aires</p>
                 ${order.totalPrice > 0 ? `<p style="margin: 10px 0;"><strong>Total a pagar:</strong> <span style="font-size: 20px; color: #28a745;">$${order.totalPrice.toFixed(2)}</span></p>` : ''}
             </div>
