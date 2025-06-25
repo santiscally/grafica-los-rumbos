@@ -1,36 +1,16 @@
-// routes/file.routes.js
+// backend/routes/file.routes.js - REEMPLAZAR TODO
 const express = require('express');
 const router = express.Router();
 const fileController = require('../controllers/file.controller');
-const gridFSService = require('../services/gridfs.service');
+const filesystemService = require('../services/filesystem.service');
 const authMiddleware = require('../middleware/auth.middleware');
 
-// Rutas para archivos
-router.post('/', authMiddleware, gridFSService.upload.single('file'), fileController.uploadFile);
-router.get('/:id', fileController.getFile);
-router.delete('/:id', authMiddleware, fileController.deleteFile);
-router.get('/base64/:id', fileController.getFileBase64);
-// Añadir al file.routes.js
-router.get('/debug/:id', async (req, res) => {
-    try {
-      const fileId = req.params.id;
-      const gfs = gridFSService.getGfs();
-      
-      if (!gfs) {
-        return res.status(500).json({ message: 'GridFS no está inicializado' });
-      }
-      
-      const file = await new Promise((resolve, reject) => {
-        gfs.files.findOne({ _id: new mongoose.Types.ObjectId(fileId) }, (err, file) => {
-          if (err) reject(err);
-          else resolve(file);
-        });
-      });
-      
-      res.json({ file, exists: !!file });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
+// Rutas para archivos de productos
+router.post('/product', authMiddleware, filesystemService.uploadProducto.single('file'), fileController.uploadProductImage);
+router.get('/product/:id', fileController.getProductImage);
+router.delete('/product/:id', authMiddleware, fileController.deleteProductImage);
+
+// Rutas para archivos de pedidos
+router.get('/order/:orderId/:filename', authMiddleware, fileController.getOrderFile);
 
 module.exports = router;

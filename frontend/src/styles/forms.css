@@ -230,3 +230,39 @@
     margin-top: 2rem;
   }
 }
+
+/* Mensaje de éxito en línea con el botón */
+.alert.mb-0 {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+}
+
+.alert.mb-0 .btn-close {
+  padding: 0.25rem;
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Botones de notificación en admin */
+.btn-sm i {
+  font-size: 0.875rem;
+}
+
+.btn-outline-success:hover .fa-whatsapp {
+  color: #25D366;
+}
+
+/* Responsive para mensaje inline */
+@media (max-width: 768px) {
+  .d-flex.align-items-center {
+    flex-wrap: wrap;
+  }
+  
+  .alert.mb-0.me-auto {
+    width: 100%;
+    margin-bottom: 1rem !important;
+    margin-right: 0 !important;
+  }
+}

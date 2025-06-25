@@ -23,6 +23,10 @@ services:
       - JWT_SECRET=${JWT_SECRET:-supersecretkey}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@admin.com}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-password123}
+    volumes:
+      # Volúmenes para persistir archivos fuera del container
+      - ./uploads/pedidos:/app/pedidos
+      - ./uploads/productos:/app/productos
     networks:
       - grafica-network
     depends_on:

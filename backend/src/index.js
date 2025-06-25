@@ -1,3 +1,4 @@
+// backend/src/index.js - ARCHIVO COMPLETO
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -7,7 +8,8 @@ const authRoutes = require('./routes/auth.routes');
 const productRoutes = require('./routes/product.routes');
 const orderRoutes = require('./routes/order.routes');
 const fileRoutes = require('./routes/file.routes');
-const gridFSService = require('./services/gridfs.service');
+const priceRoutes = require('./routes/price.routes');
+const filesystemService = require('./services/filesystem.service');
 
 const app = express();
 
@@ -25,19 +27,15 @@ mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
-.then(() => {
+.then(async () => {
   console.log('Connected to MongoDB');
   
-  // Esperar a que la conexión esté lista antes de inicializar GridFS
-  mongoose.connection.once('open', () => {
-    console.log('MongoDB connection open');
-    try {
-      // Inicializar GridFS
-      gridFSService.initGridFS();
-    } catch (err) {
-      console.error('Error initializing GridFS:', err);
-    }
-  });
+  // Inicializar sistema de archivos
+  await filesystemService.initializeDirectories();
+  
+  // Inicializar base de datos
+  const initializeDatabase = require('./scripts/init');
+  await initializeDatabase();
 })
 .catch((err) => console.error('MongoDB connection error:', err));
 
@@ -46,6 +44,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/prices', priceRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -1,0 +1,58 @@
+/* frontend/src/styles/print.css */
+/* Estilos específicos para impresión de recibos */
+
+@media print {
+  /* Configuración de página para ticket de 80mm */
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+  
+  /* Reset de estilos del navegador */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  /* Ocultar elementos no necesarios */
+  .no-print,
+  button,
+  .btn,
+  nav,
+  header,
+  footer {
+    display: none !important;
+  }
+  
+  /* Estilos del recibo */
+  .receipt-container {
+    width: 80mm !important;
+    margin: 0 !important;
+    padding: 5mm !important;
+    font-size: 11pt !important;
+  }
+  
+  /* Asegurar que los fondos negros se impriman */
+  .grade-box.selected {
+    background-color: #000 !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+  
+  /* Líneas y bordes */
+  .border-dashed {
+    border-style: dashed !important;
+  }
+  
+  /* Ajustes de tipografía */
+  body {
+    font-family: 'Courier New', monospace !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Prevenir saltos de página */
+  .receipt-item {
+    page-break-inside: avoid !important;
+  }
+}

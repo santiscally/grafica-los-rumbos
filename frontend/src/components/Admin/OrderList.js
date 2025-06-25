@@ -1,7 +1,7 @@
-// frontend/src/components/Admin/OrderList.js - REEMPLAZAR TODO
-
+// frontend/src/components/Admin/OrderList.js - ARCHIVO COMPLETO CORREGIDO
 import React, { useState, useEffect } from 'react';
 import { orderService } from '../../services/api';
+import api from '../../services/api';
 
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
@@ -82,40 +82,93 @@ const OrderList = () => {
       console.error('Error updating price:', error);
     }
   };
+
+  // Nueva función para descargar archivos con autenticación
+  const handleDownloadFile = async (orderId, filename, originalName) => {
+    try {
+      const response = await api.get(`/orders/${orderId}/files/${filename}/download`, {
+        responseType: 'blob'
+      });
+      
+      // Crear un link temporal para descargar
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', originalName || filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error descargando archivo:', error);
+      alert('Error al descargar el archivo');
+    }
+  };
   
-const handleViewFiles = async (order) => {
-  if (order.files && order.files.length > 0) {
-    const filesList = order.files.map((file, index) => (
-      `${index + 1}. ${file.filename} - 
-      <a href="${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/orders/${order._id}/files/${file.fileId}/download" 
-         target="_blank" 
-         rel="noopener noreferrer">
-        Descargar
-      </a>`
-    )).join('<br>');
-    
-    // Crear un div temporal para mostrar los archivos
-    const modalDiv = document.createElement('div');
-    modalDiv.innerHTML = `
-      <div class="modal d-block" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Archivos del Pedido</h5>
-              <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
-            </div>
-            <div class="modal-body">
-              ${filesList}
+  const handleViewFiles = async (order) => {
+    if (order.files && order.files.length > 0) {
+      const modalDiv = document.createElement('div');
+      modalDiv.innerHTML = `
+        <div class="modal d-block" style="background-color: rgba(0,0,0,0.5);">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Archivos del Pedido</h5>
+                <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+              </div>
+              <div class="modal-body">
+                <div id="files-list-container">
+                  ${order.files.map((file, index) => `
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                      <span>${index + 1}. ${file.filename}</span>
+                      <button 
+                        class="btn btn-sm btn-primary download-file-btn"
+                        data-order-id="${order._id}"
+                        data-filename="${file.storedFilename}"
+                        data-original-name="${file.filename}"
+                      >
+                        <i class="fas fa-download"></i> Descargar
+                      </button>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    `;
-    document.body.appendChild(modalDiv);
-  }
-};
-  
-
+      `;
+      
+      document.body.appendChild(modalDiv);
+      
+      // Agregar event listeners a los botones de descarga
+      const downloadButtons = modalDiv.querySelectorAll('.download-file-btn');
+      downloadButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+          const orderId = e.currentTarget.getAttribute('data-order-id');
+          const filename = e.currentTarget.getAttribute('data-filename');
+          const originalName = e.currentTarget.getAttribute('data-original-name');
+          handleDownloadFile(orderId, filename, originalName);
+        });
+      });
+    }
+  };
+  const handleSendNotification = async (order, type) => {
+    try {
+      const result = await orderService.sendNotification(order._id, type);
+      
+      if (type === 'whatsapp' && result.whatsappUrl) {
+        // Abrir WhatsApp en una nueva pestaña con la URL correcta
+        console.log('Abriendo WhatsApp con URL:', result.whatsappUrl);
+        window.open(result.whatsappUrl, '_blank');
+      } else if (type === 'email') {
+        // Mostrar mensaje de éxito para email
+        alert('Notificación enviada por email correctamente');
+      }
+    } catch (error) {
+      console.error('Error enviando notificación:', error);
+      alert('Error al enviar notificación: ' + (error.message || 'Error desconocido'));
+    }
+  };
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -143,7 +196,6 @@ const handleViewFiles = async (order) => {
 
   return (
     <div>
-      {/* Filtros */}
       <div className="card mb-4">
         <div className="card-header">
           <h5 className="mb-0">Filtros</h5>
@@ -212,7 +264,6 @@ const handleViewFiles = async (order) => {
         </div>
       </div>
 
-      {/* Tabla de pedidos */}
       {loading ? (
         <div className="d-flex justify-content-center my-5">
           <div className="spinner-border text-primary" role="status">
@@ -249,7 +300,11 @@ const handleViewFiles = async (order) => {
               ) : (
                 orders.map(order => (
                   <tr key={order._id}>
-                    <td><small className="text-muted font-monospace">{order._id.substring(0, 8)}...</small></td>
+                    <td>
+                      <small className="text-muted font-monospace">#{order.orderCode}</small>
+                      <br/>
+                      <small className="text-muted">{order._id.substring(0, 8)}...</small>
+                    </td>
                     <td>
                       <div>
                         {order.customerName && <div className="fw-semibold">{order.customerName}</div>}
@@ -271,8 +326,7 @@ const handleViewFiles = async (order) => {
                           {order.specifications && (
                             <small className="text-muted">
                               Cantidad: {order.specifications.cantidad || 'N/A'}
-                              {order.specifications.color && ', Color'}
-                              {order.specifications.dobleCaras && ', Doble cara'}
+                              {order.specifications.cantidadPaginas && `, ${order.specifications.cantidadPaginas} págs`}
                             </small>
                           )}
                         </div>
@@ -343,8 +397,15 @@ const handleViewFiles = async (order) => {
                       </select>
                     </td>
                     <td>{formatDate(order.createdAt)}</td>
-                    <td>
+                                        <td>
                       <div className="d-flex gap-1">
+                        <button
+                          className="btn btn-sm btn-outline-success"
+                          title="Descargar información"
+                          onClick={() => orderService.downloadOrderInfo(order._id)}
+                        >
+                          <i className="fas fa-download"></i>
+                        </button>
                         {order.customOrder && order.files && order.files.length > 0 && (
                           <button
                             className="btn btn-sm btn-outline-info"
@@ -354,6 +415,24 @@ const handleViewFiles = async (order) => {
                             <i className="fas fa-file"></i>
                             <span className="ms-1">{order.files.length}</span>
                           </button>
+                        )}
+                        {order.status === 'listo' && (
+                          <>
+                            <button
+                              className="btn btn-sm btn-outline-primary"
+                              title="Enviar email de pedido listo"
+                              onClick={() => handleSendNotification(order, 'email')}
+                            >
+                              <i className="fas fa-envelope"></i>
+                            </button>
+                            <button
+                              className="btn btn-sm btn-outline-success"
+                              title="Enviar WhatsApp de pedido listo"
+                              onClick={() => handleSendNotification(order, 'whatsapp')}
+                            >
+                              <i className="fab fa-whatsapp"></i>
+                            </button>
+                          </>
                         )}
                         {order.status !== 'anulado' && (
                           <button

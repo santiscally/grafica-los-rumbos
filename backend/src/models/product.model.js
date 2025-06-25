@@ -1,3 +1,4 @@
+// backend/models/product.model.js - REEMPLAZAR TODO
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
@@ -13,14 +14,14 @@ const productSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  image: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true
+  hasImage: {
+    type: Boolean,
+    default: false
   },
   year: {
     type: String,
     required: true,
-    enum: ['1er año', '2do año']
+    enum: ['7mo grado', '1er año', '2do año', '3er año', '4to año', '5to año']
   },
   subject: {
     type: String,
@@ -30,7 +31,7 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: false,
     unique: true,
-    sparse: true // Permite valores null únicos
+    sparse: true
   },
   date: {
     type: Date,
@@ -39,10 +40,10 @@ const productSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 productSchema.virtual('imageUrl').get(function() {
-  return `/api/files/${this.image}`;
+  return this.hasImage ? `/api/files/product/${this._id}` : null;
 });
 
-// Asegurar que el virtual se incluya en toJSON y toObject
 productSchema.set('toJSON', { virtuals: true });
 productSchema.set('toObject', { virtuals: true });
+
 module.exports = mongoose.model('Product', productSchema);

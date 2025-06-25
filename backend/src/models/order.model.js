@@ -1,8 +1,12 @@
 // backend/models/order.model.js - REEMPLAZAR TODO
-
 const mongoose = require('mongoose');
+const Counter = require('./counter.model');
 
 const orderSchema = new mongoose.Schema({
+  orderCode: {
+    type: Number,
+    unique: true
+  },
   customerEmail: {
     type: String,
     required: true
@@ -21,19 +25,21 @@ const orderSchema = new mongoose.Schema({
   },
   serviceType: {
     type: String,
-    enum: ['impresion', 'fotocopia', 'encuadernacion', 'plastificado', 'otro', ''],
-    default: ''
+    default: ''  // Removemos el enum para permitir cualquier valor
   },
   specifications: {
     cantidad: Number,
+    cantidadPaginas: Number,
     color: Boolean,
     dobleCaras: Boolean,
     papel: String,
-    observaciones: String
+    observaciones: String,
+    servicio: String,
+    precioUnitario: Number
   },
   files: [{
     filename: String,
-    fileId: mongoose.Schema.Types.ObjectId,
+    storedFilename: String,
     uploadedAt: {
       type: Date,
       default: Date.now
@@ -41,10 +47,10 @@ const orderSchema = new mongoose.Schema({
   }],
   products: [{
     productId: {
-      type: mongoose.Schema.Types.Mixed, // Permite ObjectId o String para 'custom'
+      type: mongoose.Schema.Types.Mixed,
       required: true
     },
-    name: String, // Para pedidos personalizados
+    name: String,
     quantity: {
       type: Number,
       required: true,
@@ -59,7 +65,7 @@ const orderSchema = new mongoose.Schema({
   },
   totalPrice: {
     type: Number,
-    required: false, // No requerido para pedidos personalizados
+    required: false,
     default: 0
   },
   createdAt: {
@@ -68,20 +74,21 @@ const orderSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Método para popular productos solo si no es personalizado
-orderSchema.methods.populateProducts = async function() {
-  const Product = mongoose.model('Product');
-  
-  for (let item of this.products) {
-    if (item.productId !== 'custom' && mongoose.Types.ObjectId.isValid(item.productId)) {
-      const product = await Product.findById(item.productId);
-      if (product) {
-        item.productId = product;
-      }
+// Auto-incrementar orderCode
+orderSchema.pre('save', async function(next) {
+  if (!this.orderCode) {
+    try {
+      const counter = await Counter.findByIdAndUpdate(
+        { _id: 'orderCode' },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      this.orderCode = counter.seq;
+    } catch (error) {
+      return next(error);
     }
   }
-  
-  return this;
-};
+  next();
+});
 
 module.exports = mongoose.model('Order', orderSchema);

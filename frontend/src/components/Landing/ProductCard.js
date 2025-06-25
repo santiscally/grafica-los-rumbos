@@ -1,28 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { fileService } from '../../services/api';
+// frontend/src/components/Landing/ProductCard.js - ARCHIVO COMPLETO
+import React from 'react';
 
 const ProductCard = ({ product }) => {
-  const [imageData, setImageData] = useState(null);
-  const [imageLoading, setImageLoading] = useState(true);
-  
-  useEffect(() => {
-    const loadImage = async () => {
-      if (product.image) {
-        try {
-          setImageLoading(true);
-          const data = await fileService.getFileBase64(product.image);
-          setImageData(data.data);
-        } catch (error) {
-          console.error('Error cargando imagen:', error);
-        } finally {
-          setImageLoading(false);
-        }
-      }
-    };
-    
-    loadImage();
-  }, [product.image]);
-
   const handleAddToOrder = () => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     
@@ -50,23 +29,24 @@ const ProductCard = ({ product }) => {
     }).format(price);
   };
 
+  // Usar la nueva ruta para las imágenes
+  const imageUrl = product.hasImage 
+    ? `${process.env.REACT_APP_API_URL || ''}/api/files/product/${product._id}`
+    : '/placeholder.jpg';
+
   return (
     <div className="card h-100 product-card-enhanced">
       {/* Header con imagen */}
       <div className="product-image-container">
-        {imageLoading ? (
-          <div className="d-flex align-items-center justify-content-center h-100 bg-light">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Cargando...</span>
-            </div>
-          </div>
-        ) : (
-          <img 
-            src={imageData || '/placeholder.jpg'} 
-            alt={product.name} 
-            className="product-image"
-          />
-        )}
+        <img 
+          src={imageUrl} 
+          alt={product.name} 
+          className="product-image"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = '/placeholder.jpg';
+          }}
+        />
         {/* Badge de año */}
         <span className="position-absolute top-0 start-0 m-3 badge bg-primary">
           {product.year}
@@ -102,7 +82,7 @@ const ProductCard = ({ product }) => {
           className="btn btn-primary w-100"
           onClick={handleAddToOrder}
         >
-          Solicitar Presupuesto
+          Agregar al carrito
         </button>
       </div>
     </div>

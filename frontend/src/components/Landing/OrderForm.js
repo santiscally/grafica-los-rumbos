@@ -5,6 +5,7 @@ import '../../styles/forms.css';
 const OrderForm = () => {
   const [cart, setCart] = useState([]);
   const [customerInfo, setCustomerInfo] = useState({
+    name: '',
     email: '',
     phone: ''
   });
@@ -59,6 +60,12 @@ const OrderForm = () => {
     }).format(price);
   };
 
+  // Función para formatear el número de teléfono
+  const formatPhoneNumber = (phone) => {
+    // Eliminar todo excepto números y el signo +
+    return phone.replace(/[^\d+]/g, '');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -67,7 +74,7 @@ const OrderForm = () => {
       return;
     }
     
-    if (!customerInfo.email || !customerInfo.phone) {
+    if (!customerInfo.name || !customerInfo.email || !customerInfo.phone) {
       setMessage('Por favor completa todos los campos');
       return;
     }
@@ -75,9 +82,13 @@ const OrderForm = () => {
     setIsSubmitting(true);
     
     try {
+      // Formatear el teléfono antes de enviar
+      const formattedPhone = formatPhoneNumber(customerInfo.phone);
+      
       const order = {
+        customerName: customerInfo.name,
         customerEmail: customerInfo.email,
-        customerPhone: customerInfo.phone,
+        customerPhone: formattedPhone,
         products: cart.map(item => ({
           productId: item.productId,
           quantity: item.quantity
@@ -86,12 +97,12 @@ const OrderForm = () => {
       
       await orderService.createOrder(order);
       
-      setMessage('¡Pedido realizado con éxito! Recibirás notificaciones en tu email.');
+      setMessage('¡Pedido realizado con éxito! Recibirás un email de confirmación.');
       
       // Limpiar carrito
       localStorage.removeItem('cart');
       setCart([]);
-      setCustomerInfo({ email: '', phone: '' });
+      setCustomerInfo({ name: '', email: '', phone: '' });
       
     } catch (error) {
       setMessage('Error al procesar el pedido. Intenta nuevamente.');
@@ -106,6 +117,16 @@ const OrderForm = () => {
     setCustomerInfo(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handlePhoneChange = (e) => {
+    const { value } = e.target;
+    // Permitir solo números, espacios, guiones, paréntesis y el signo +
+    const filteredValue = value.replace(/[^\d\s\-\(\)\+]/g, '');
+    setCustomerInfo(prev => ({
+      ...prev,
+      phone: filteredValue
     }));
   };
 
@@ -168,6 +189,21 @@ const OrderForm = () => {
         </div>
         
         <div className="form-group">
+          <label htmlFor="name">
+            <i className="fas fa-user"></i> Nombre:
+          </label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value={customerInfo.name}
+            onChange={handleChange}
+            placeholder="Tu nombre completo"
+            required
+          />
+        </div>
+        
+        <div className="form-group">
           <label htmlFor="email">
             <i className="fas fa-envelope"></i> Email:
           </label>
@@ -191,10 +227,13 @@ const OrderForm = () => {
             id="phone"
             name="phone"
             value={customerInfo.phone}
-            onChange={handleChange}
+            onChange={handlePhoneChange}
             placeholder="Tu número de teléfono"
             required
           />
+          <small style={{color: '#666', fontSize: '0.85rem', marginTop: '5px', display: 'block'}}>
+            Ejemplo: 11 2345-6789 o +54 11 2345-6789
+          </small>
         </div>
         
         <button 

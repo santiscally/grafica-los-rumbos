@@ -1,24 +1,52 @@
-// frontend/src/components/PedidoPersonalizado/PedidoPersonalizado.js - REEMPLAZAR TODO
-
-import React, { useState } from 'react';
+// frontend/src/components/Landing/PedidoPersonalizado.js - REEMPLAZAR TODO
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { orderService } from '../../services/api';
+import { orderService, priceService } from '../../services/api';
 
 const PedidoPersonalizado = () => {
   const [archivos, setArchivos] = useState([]);
+  const [precios, setPrecios] = useState([]);
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
     telefono: '',
-    tipoServicio: '',
-    cantidad: '',
-    color: false,
-    dobleCaras: false,
-    papel: '',
+    precioSeleccionado: '',
+    cantidadPaginas: '',
+    cantidadCopias: '',
     observaciones: ''
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [precioEstimado, setPrecioEstimado] = useState(0);
+
+  useEffect(() => {
+    fetchPrecios();
+  }, []);
+
+  useEffect(() => {
+    calcularPrecioEstimado();
+  }, [formData.precioSeleccionado, formData.cantidadPaginas, formData.cantidadCopias]);
+
+  const fetchPrecios = async () => {
+    try {
+      const data = await priceService.getPrices();
+      setPrecios(data);
+    } catch (error) {
+      console.error('Error al cargar precios:', error);
+    }
+  };
+
+  const calcularPrecioEstimado = () => {
+    if (formData.precioSeleccionado && formData.cantidadPaginas && formData.cantidadCopias) {
+      const precio = precios.find(p => p._id === formData.precioSeleccionado);
+      if (precio) {
+        const total = precio.precio * parseInt(formData.cantidadPaginas) * parseInt(formData.cantidadCopias);
+        setPrecioEstimado(total);
+      }
+    } else {
+      setPrecioEstimado(0);
+    }
+  };
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files || []);
@@ -41,59 +69,57 @@ const PedidoPersonalizado = () => {
     setMessage(null);
 
     try {
-      // Crear FormData para enviar archivos
       const formDataToSend = new FormData();
       
-      // Agregar archivos
-      archivos.forEach((archivo, index) => {
+      archivos.forEach((archivo) => {
         formDataToSend.append('files', archivo);
       });
       
-      // Agregar datos del pedido
+      const precioSeleccionado = precios.find(p => p._id === formData.precioSeleccionado);
+      
+      const phoneFormatted = formData.telefono.replace(/[^\d+]/g, '');
+
       const orderData = {
         customerEmail: formData.email,
-        customerPhone: formData.telefono,
+        customerPhone: phoneFormatted,
         customerName: formData.nombre,
         customOrder: true,
-        serviceType: formData.tipoServicio,
+        serviceType: precioSeleccionado?.servicio || 'Servicio personalizado', // Ahora es simplemente el nombre del servicio
         specifications: {
-          cantidad: formData.cantidad,
-          color: formData.color,
-          dobleCaras: formData.dobleCaras,
-          papel: formData.papel,
+          cantidad: parseInt(formData.cantidadCopias) || 1, // Asegurar que sea número
+          cantidadPaginas: parseInt(formData.cantidadPaginas) || 1, // Asegurar que sea número
+          servicio: precioSeleccionado?.servicio,
+          precioUnitario: precioSeleccionado?.precio,
           observaciones: formData.observaciones
         },
         products: [{
           productId: 'custom',
-          name: `Pedido Personalizado - ${formData.tipoServicio}`,
-          quantity: parseInt(formData.cantidad) || 1
-        }]
+          name: `Pedido Personalizado - ${precioSeleccionado?.servicio || 'Servicio'}`,
+          quantity: parseInt(formData.cantidadCopias) || 1
+        }],
+        totalPrice: precioEstimado
       };
       
-      // Agregar orderData como JSON string
       formDataToSend.append('orderData', JSON.stringify(orderData));
       
-      // Enviar pedido con archivos
       await orderService.createCustomOrder(formDataToSend);
       
       setMessage({ 
         type: 'success', 
-        text: 'Pedido enviado correctamente. Te contactaremos pronto.' 
+        text: 'Pedido enviado correctamente. Recibirás un email de confirmación.' 
       });
       
-      // Limpiar formulario
       setFormData({
         nombre: '',
         email: '',
         telefono: '',
-        tipoServicio: '',
-        cantidad: '',
-        color: false,
-        dobleCaras: false,
-        papel: '',
+        precioSeleccionado: '',
+        cantidadPaginas: '',
+        cantidadCopias: '',
         observaciones: ''
       });
       setArchivos([]);
+      setPrecioEstimado(0);
       
     } catch (error) {
       setMessage({ 
@@ -107,16 +133,22 @@ const PedidoPersonalizado = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: value
     }));
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(price);
   };
 
   return (
     <div className="min-h-100vh bg-light">
-      {/* Header */}
       <header className="border-bottom bg-white shadow-sm">
         <div className="container">
           <div className="py-3">
@@ -142,16 +174,9 @@ const PedidoPersonalizado = () => {
               <p className="text-muted lead">Sube tus archivos y especifica los detalles de tu pedido</p>
             </div>
 
-            {message && (
-              <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`} role="alert">
-                <i className={`fas fa-${message.type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2`}></i>
-                {message.text}
-                <button type="button" className="btn-close" onClick={() => setMessage(null)}></button>
-              </div>
-            )}
+
 
             <form onSubmit={handleSubmit}>
-              {/* Información del Cliente */}
               <div className="card mb-4">
                 <div className="card-header bg-white">
                   <h4 className="mb-0">Información de Contacto</h4>
@@ -198,7 +223,6 @@ const PedidoPersonalizado = () => {
                 </div>
               </div>
 
-              {/* Subida de Archivos */}
               <div className="card mb-4">
                 <div className="card-header bg-white">
                   <h4 className="mb-0">Archivos del Pedido</h4>
@@ -250,91 +274,80 @@ const PedidoPersonalizado = () => {
                 </div>
               </div>
 
-              {/* Especificaciones del Pedido */}
               <div className="card mb-4">
                 <div className="card-header bg-white">
                   <h4 className="mb-0">Especificaciones del Pedido</h4>
                 </div>
                 <div className="card-body">
                   <div className="row g-3">
-                    <div className="col-md-6">
-                      <label htmlFor="tipoServicio" className="form-label">Tipo de Servicio *</label>
+                    <div className="col-12">
+                      <label htmlFor="precioSeleccionado" className="form-label">Tipo de Servicio *</label>
                       <select
                         className="form-select"
-                        id="tipoServicio"
-                        name="tipoServicio"
-                        value={formData.tipoServicio}
+                        id="precioSeleccionado"
+                        name="precioSeleccionado"
+                        value={formData.precioSeleccionado}
                         onChange={handleInputChange}
                         required
                       >
                         <option value="">Selecciona un servicio</option>
-                        <option value="impresion">Impresión</option>
-                        <option value="fotocopia">Fotocopia</option>
-                        <option value="encuadernacion">Encuadernación</option>
-                        <option value="plastificado">Plastificado</option>
-                        <option value="otro">Otro</option>
+                        {precios.map(precio => (
+                          <option key={precio._id} value={precio._id}>
+                            {precio.servicio} - ${formatPrice(precio.precio)}
+                          </option>
+                        ))}
                       </select>
                     </div>
+                    
                     <div className="col-md-6">
-                      <label htmlFor="cantidad" className="form-label">Cantidad de Copias *</label>
+                      <label htmlFor="cantidadPaginas" className="form-label">Cantidad de Páginas *</label>
                       <input
                         type="number"
                         className="form-control"
-                        id="cantidad"
-                        name="cantidad"
+                        id="cantidadPaginas"
+                        name="cantidadPaginas"
                         min="1"
-                        value={formData.cantidad}
+                        value={formData.cantidadPaginas}
                         onChange={handleInputChange}
                         required
                       />
                     </div>
+                    
                     <div className="col-md-6">
-                      <label htmlFor="papel" className="form-label">Tipo de Papel</label>
-                      <select
-                        className="form-select"
-                        id="papel"
-                        name="papel"
-                        value={formData.papel}
+                      <label htmlFor="cantidadCopias" className="form-label">Cantidad de Copias *</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        id="cantidadCopias"
+                        name="cantidadCopias"
+                        min="1"
+                        value={formData.cantidadCopias}
                         onChange={handleInputChange}
-                      >
-                        <option value="">Selecciona tipo de papel</option>
-                        <option value="a4-80g">A4 - 80g</option>
-                        <option value="a4-90g">A4 - 90g</option>
-                        <option value="a3-80g">A3 - 80g</option>
-                        <option value="a3-90g">A3 - 90g</option>
-                        <option value="cartulina">Cartulina</option>
-                      </select>
+                        required
+                      />
                     </div>
                   </div>
 
-                  <div className="mt-4">
-                    <div className="form-check mb-3">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="color"
-                        name="color"
-                        checked={formData.color}
-                        onChange={handleInputChange}
-                      />
-                      <label className="form-check-label" htmlFor="color">
-                        Impresión a color
-                      </label>
+                  {precioEstimado > 0 && (
+                    <div className="alert alert-info mt-4">
+                      <h5 className="alert-heading">
+                        <i className="fas fa-calculator me-2"></i>
+                        Precio Estimado
+                      </h5>
+                      <div className="mb-2">
+                        <small className="text-muted d-block">
+                          Servicio: {precios.find(p => p._id === formData.precioSeleccionado)?.servicio}
+                        </small>
+                        <small className="text-muted d-block">
+                          ${formatPrice(precios.find(p => p._id === formData.precioSeleccionado)?.precio || 0)} x {formData.cantidadPaginas} páginas x {formData.cantidadCopias} copias
+                        </small>
+                      </div>
+                      <p className="mb-0 h4">${formatPrice(precioEstimado)}</p>
+                      <small className="text-muted">
+                        * Este es un precio estimado. El precio final puede variar según el contenido del archivo.
+                      </small>
                     </div>
-                    <div className="form-check">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="dobleCaras"
-                        name="dobleCaras"
-                        checked={formData.dobleCaras}
-                        onChange={handleInputChange}
-                      />
-                      <label className="form-check-label" htmlFor="dobleCaras">
-                        Impresión a doble cara
-                      </label>
-                    </div>
-                  </div>
+                  )}
 
                   <div className="mt-4">
                     <label htmlFor="observaciones" className="form-label">Observaciones Adicionales</label>
@@ -351,8 +364,14 @@ const PedidoPersonalizado = () => {
                 </div>
               </div>
 
-              {/* Botones de Acción */}
-              <div className="d-flex gap-3 justify-content-end">
+              <div className="d-flex gap-3 justify-content-end align-items-center">
+                {message && (
+                  <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'} mb-0 me-auto`} role="alert">
+                    <i className={`fas fa-${message.type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2`}></i>
+                    {message.text}
+                    <button type="button" className="btn-close ms-3" onClick={() => setMessage(null)}></button>
+                  </div>
+                )}
                 <Link to="/" className="btn btn-outline-secondary">
                   Cancelar
                 </Link>

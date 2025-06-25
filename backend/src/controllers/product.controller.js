@@ -29,15 +29,30 @@ const productController = {
     }
   },
 
-  async createProduct(req, res) {
+async createProduct(req, res) {
     try {
-      // Verificar que el body incluye un ID de imagen válido
-      if (!req.body.image) {
-        return res.status(400).json({ message: 'Se requiere un ID de imagen' });
+      const product = new Product({
+        ...req.body,
+        hasImage: false // Se actualizará cuando se suba la imagen
+      });
+      
+      await product.save();
+      
+      // Si hay una imagen temporal, moverla
+      if (req.body.tempFile) {
+        try {
+          await filesystemService.moveImageToProducto(
+            { path: `/app/productos/temp/${req.body.tempFile}`, originalname: req.body.tempFile },
+            product._id.toString()
+          );
+          
+          product.hasImage = true;
+          await product.save();
+        } catch (imageError) {
+          console.error('Error moviendo imagen:', imageError);
+        }
       }
       
-      const product = new Product(req.body);
-      await product.save();
       res.status(201).json(product);
     } catch (error) {
       res.status(400).json({ message: 'Error creating product', error: error.message });
@@ -46,17 +61,24 @@ const productController = {
 
   async updateProduct(req, res) {
     try {
-      // Asegurarse de que si no se incluye una nueva imagen, se mantenga la existente
-      if (!req.body.image) {
-        const existingProduct = await Product.findById(req.params.id);
-        if (existingProduct) {
-          req.body.image = existingProduct.image;
+      const updateData = { ...req.body };
+      
+      // Si hay una nueva imagen temporal, procesarla
+      if (req.body.tempFile) {
+        try {
+          await filesystemService.moveImageToProducto(
+            { path: `/app/productos/temp/${req.body.tempFile}`, originalname: req.body.tempFile },
+            req.params.id
+          );
+          updateData.hasImage = true;
+        } catch (imageError) {
+          console.error('Error actualizando imagen:', imageError);
         }
       }
       
       const product = await Product.findByIdAndUpdate(
         req.params.id,
-        req.body,
+        updateData,
         { new: true, runValidators: true }
       );
       
@@ -72,7 +94,6 @@ const productController = {
 
   async deleteProduct(req, res) {
     try {
-      // Obtener el producto antes de eliminarlo para tener acceso al ID de la imagen
       const product = await Product.findById(req.params.id);
       
       if (!product) {
@@ -82,20 +103,14 @@ const productController = {
       // Eliminar el producto
       await Product.findByIdAndDelete(req.params.id);
       
-      // Opcionalmente, puedes eliminar la imagen asociada
-      // Para ello necesitarías acceso al servicio GridFS
-      // Comenta esta sección si prefieres conservar las imágenes
-      /*
-      const gridFSBucket = require('../services/gridfs.service').getGridFSBucket();
-      if (gridFSBucket && product.image) {
+      // Eliminar la imagen asociada
+      if (product.hasImage) {
         try {
-          await gridFSBucket.delete(new mongoose.Types.ObjectId(product.image));
-          console.log(`Imagen ${product.image} eliminada.`);
-        } catch (fileError) {
-          console.error(`Error al eliminar imagen ${product.image}:`, fileError);
+          await filesystemService.deleteProductoImage(product._id.toString());
+        } catch (imageError) {
+          console.error('Error eliminando imagen:', imageError);
         }
       }
-      */
       
       res.json({ message: 'Product deleted successfully' });
     } catch (error) {

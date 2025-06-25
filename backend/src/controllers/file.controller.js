@@ -1,135 +1,115 @@
-// controllers/file.controller.js
-const mongoose = require('mongoose');
-const { ObjectId } = mongoose.Types;
-const gridFSService = require('../services/gridfs.service');
+// backend/controllers/file.controller.js - REEMPLAZAR TODO
+const path = require('path');
+const fs = require('fs').promises;
+const filesystemService = require('../services/filesystem.service');
 
 const fileController = {
-  // Subir archivo
-  async uploadFile(req, res) {
+  // Subir imagen de producto
+  async uploadProductImage(req, res) {
     try {
       if (!req.file) {
         return res.status(400).json({ message: 'No se subió ningún archivo' });
       }
       
-      // Devolver información del archivo subido
+      // El productId se enviará en el body
+      const { productId } = req.body;
+      
+      if (!productId) {
+        // Si no hay productId, es un archivo temporal
+        return res.status(200).json({
+          tempFile: req.file.filename,
+          originalname: req.file.originalname
+        });
+      }
+      
+      // Mover archivo a su ubicación final
+      const imageInfo = await filesystemService.moveImageToProducto(req.file, productId);
+      
       res.status(201).json({
-        fileId: req.file.id,
-        filename: req.file.filename,
-        originalname: req.file.metadata.originalname,
-        contentType: req.file.contentType,
-        url: `/api/files/${req.file.id}`
+        success: true,
+        filename: imageInfo.filename,
+        url: `/api/files/product/${productId}`
       });
     } catch (error) {
-      console.error('Error uploading file:', error);
-      res.status(500).json({ message: 'Error al subir archivo', error: error.message });
+      console.error('Error uploading product image:', error);
+      res.status(500).json({ message: 'Error al subir imagen', error: error.message });
     }
   },
 
-  // Obtener archivo por ID
-  async getFile(req, res) {
+  // Obtener imagen de producto
+  async getProductImage(req, res) {
     try {
-      const fileId = req.params.id;
+      const productId = req.params.id;
+      const imagePath = await filesystemService.getProductoImage(productId);
       
-      if (!mongoose.Types.ObjectId.isValid(fileId)) {
-        return res.status(400).json({ message: 'ID de archivo inválido' });
-      }
+      // Determinar el tipo MIME basado en la extensión
+      const ext = path.extname(imagePath).toLowerCase();
+      const mimeTypes = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp'
+      };
       
-      const gridFSBucket = gridFSService.getGridFSBucket();
+      const contentType = mimeTypes[ext] || 'application/octet-stream';
       
-      if (!gridFSBucket) {
-        return res.status(500).json({ message: 'GridFS no está inicializado' });
-      }
+      // Configurar headers
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
       
-      // Buscar el archivo usando directamente el driver de MongoDB (más fiable)
-      const db = mongoose.connection.db;
-      const filesCollection = db.collection('uploads.files');
-      const file = await filesCollection.findOne({ _id: new mongoose.Types.ObjectId(fileId) });
+      // Enviar archivo
+      const imageBuffer = await fs.readFile(imagePath);
+      res.send(imageBuffer);
       
-      if (!file) {
-        return res.status(404).json({ message: 'Archivo no encontrado' });
-      }
-      
-      // Configurar headers adecuados
-      res.set('Content-Type', file.contentType);
-      
-      // Usar directamente GridFSBucket para mayor fiabilidad
-      const downloadStream = gridFSBucket.openDownloadStream(new mongoose.Types.ObjectId(fileId));
-      
-      // Manejar errores explícitamente
-      downloadStream.on('error', (error) => {
-        console.error('Error al leer el archivo:', error);
-        if (!res.headersSent) {
-          return res.status(500).json({ message: 'Error al leer archivo', error: error.message });
-        }
-      });
-      
-      // Enviar el archivo al cliente
-      downloadStream.pipe(res);
     } catch (error) {
-      console.error('Error al recuperar archivo:', error);
-      res.status(500).json({ message: 'Error al obtener archivo', error: error.message });
+      console.error('Error getting product image:', error);
+      res.status(404).json({ message: 'Imagen no encontrada' });
     }
   },
-  async getFileBase64(req, res) {
+
+  // Eliminar imagen de producto
+  async deleteProductImage(req, res) {
     try {
-      const fileId = req.params.id;
-      
-      if (!mongoose.Types.ObjectId.isValid(fileId)) {
-        return res.status(400).json({ message: 'ID de archivo inválido' });
-      }
-      
-      const db = mongoose.connection.db;
-      const filesCollection = db.collection('uploads.files');
-      const chunksCollection = db.collection('uploads.chunks');
-      
-      const file = await filesCollection.findOne({ _id: new mongoose.Types.ObjectId(fileId) });
-      
-      if (!file) {
-        return res.status(404).json({ message: 'Archivo no encontrado' });
-      }
-      
-      // Obtener todos los chunks del archivo
-      const chunks = await chunksCollection.find({ files_id: file._id })
-        .sort({ n: 1 }).toArray();
-      
-      // Combinar chunks en un buffer
-      const fileData = Buffer.concat(chunks.map(chunk => chunk.data.buffer));
-      
-      // Convertir a base64
-      const base64Data = fileData.toString('base64');
-      
-      // Devolver con el tipo de contenido apropiado
-      res.json({
-        data: `data:${file.contentType};base64,${base64Data}`,
-        contentType: file.contentType
-      });
+      const productId = req.params.id;
+      await filesystemService.deleteProductoImage(productId);
+      res.json({ message: 'Imagen eliminada exitosamente' });
     } catch (error) {
-      console.error('Error al recuperar archivo:', error);
-      res.status(500).json({ message: 'Error al obtener archivo', error: error.message });
+      console.error('Error deleting product image:', error);
+      res.status(500).json({ message: 'Error al eliminar imagen', error: error.message });
     }
   },
-  // Eliminar archivo por ID
-  async deleteFile(req, res) {
+
+  // Obtener archivo de pedido
+  async getOrderFile(req, res) {
     try {
-      const fileId = req.params.id;
+      const { orderId, filename } = req.params;
+      const filePath = await filesystemService.getPedidoFile(orderId, filename);
       
-      if (!ObjectId.isValid(fileId)) {
-        return res.status(400).json({ message: 'ID de archivo inválido' });
-      }
+      // Determinar el tipo MIME
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeTypes = {
+        '.pdf': 'application/pdf',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png'
+      };
       
-      const gridFSBucket = gridFSService.getGridFSBucket();
+      const contentType = mimeTypes[ext] || 'application/octet-stream';
       
-      if (!gridFSBucket) {
-        return res.status(500).json({ message: 'GridFS no está inicializado' });
-      }
+      // Configurar headers para descarga
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       
-      // Eliminar archivo
-      await gridFSBucket.delete(new ObjectId(fileId));
+      // Enviar archivo
+      const fileBuffer = await fs.readFile(filePath);
+      res.send(fileBuffer);
       
-      res.json({ message: 'Archivo eliminado exitosamente' });
     } catch (error) {
-      console.error('Error deleting file:', error);
-      res.status(500).json({ message: 'Error al eliminar archivo', error: error.message });
+      console.error('Error getting order file:', error);
+      res.status(404).json({ message: 'Archivo no encontrado' });
     }
   }
 };

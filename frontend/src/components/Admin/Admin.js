@@ -1,9 +1,9 @@
-// frontend/src/components/Admin/Admin.js - REEMPLAZAR TODO
-
+// frontend/src/components/Admin/Admin.js - ARCHIVO COMPLETO
 import React, { useState, useEffect } from 'react';
 import Login from './Login';
 import OrderList from './OrderList';
 import ProductManager from './ProductManager';
+import PriceManager from './PriceManager';
 import NotificationPanel from './NotificationPanel';
 import { orderService } from '../../services/api';
 
@@ -111,11 +111,11 @@ const Admin = () => {
           </li>
           <li className="nav-item">
             <button 
-              className={`nav-link ${activeTab === 'notifications' ? 'active' : ''}`}
-              onClick={() => setActiveTab('notifications')}
+              className={`nav-link ${activeTab === 'precios' ? 'active' : ''}`}
+              onClick={() => setActiveTab('precios')}
             >
-              <i className="fas fa-bell me-2"></i>
-              Notificaciones
+              <i className="fas fa-tag me-2"></i>
+              Precios
             </button>
           </li>
         </ul>
@@ -243,13 +243,17 @@ const Admin = () => {
                   </div>
                   <div className="col-md-4">
                     <button 
-                      className="btn btn-outline-info w-100 py-3"
-                      onClick={() => setActiveTab('notifications')}
+                      className="btn btn-outline-warning w-100 py-3"
+                      onClick={() => setActiveTab('precios')}
                     >
-                      <i className="fas fa-paper-plane mb-2 d-block" style={{ fontSize: '2rem' }}></i>
-                      Enviar Notificaciones
+                      <i className="fas fa-tag mb-2 d-block" style={{ fontSize: '2rem' }}></i>
+                      Gestionar Precios
                     </button>
                   </div>
+                </div>
+                <div className="alert alert-info mt-3">
+                  <i className="fas fa-info-circle me-2"></i>
+                  <strong>Tip:</strong> En la lista de pedidos, usa el botón <i className="fas fa-receipt"></i> para generar un recibo imprimible de cada pedido.
                 </div>
               </div>
             </div>
@@ -272,6 +276,7 @@ const Admin = () => {
         {activeTab === 'orders' && <OrderList />}
         {activeTab === 'products' && <ProductManager />}
         {activeTab === 'notifications' && <NotificationPanel />}
+        {activeTab === 'precios' && <PriceManager />}
       </div>
     </div>
   );

@@ -78,8 +78,11 @@ const Landing = () => {
     window.dispatchEvent(new Event('cartUpdated'));
   };
 
-  const handleViewImage = (imageUrl) => {
-    setSelectedImage(imageUrl);
+  const handleViewImage = (product) => {
+    const imageUrl = product.hasImage 
+      ? `${process.env.REACT_APP_API_URL || ''}/api/files/product/${product._id}` 
+      : '/placeholder.jpg';
+    setSelectedImage({ url: imageUrl, name: product.name });
     setShowImageModal(true);
   };
 
@@ -189,8 +192,12 @@ const Landing = () => {
                       className="form-select"
                     >
                       <option value="">Todos los años</option>
+                      <option value="7mo grado">7mo grado</option>
                       <option value="1er año">1er año</option>
                       <option value="2do año">2do año</option>
+                      <option value="3er año">3er año</option>
+                      <option value="4to año">4to año</option>                        
+                      <option value="5to año">5to año</option>
                     </select>
                   </div>
                 </div>
@@ -233,7 +240,7 @@ const Landing = () => {
                         <div className="col-md-2 text-center">
                           <button 
                             className="btn btn-sm btn-outline-primary"
-                            onClick={() => handleViewImage(product.imageUrl)}
+                            onClick={() => handleViewImage(product)}
                           >
                             <i className="fas fa-image me-1"></i>
                             Ver Foto
@@ -255,7 +262,7 @@ const Landing = () => {
                             className="btn btn-primary"
                             onClick={() => handleAddToCart(product)}
                           >
-                            Solicitar
+                            Agregar al carrito
                           </button>
                         </div>
                       </div>
@@ -276,16 +283,33 @@ const Landing = () => {
       </div>
 
       {/* Modal para imagen */}
-      {showImageModal && (
-        <div className="modal d-block" style={{backgroundColor: 'rgba(0,0,0,0.8)'}} onClick={() => setShowImageModal(false)}>
-          <div className="modal-dialog modal-dialog-centered modal-lg">
+      {showImageModal && selectedImage && (
+        <div 
+          className="modal d-block" 
+          style={{backgroundColor: 'rgba(0,0,0,0.8)'}} 
+          onClick={() => setShowImageModal(false)}
+        >
+          <div className="modal-dialog modal-dialog-centered modal-lg" onClick={(e) => e.stopPropagation()}>
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Vista de Imagen</h5>
-                <button type="button" className="btn-close" onClick={() => setShowImageModal(false)}></button>
+                <h5 className="modal-title">{selectedImage.name || 'Vista de Imagen'}</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => setShowImageModal(false)}
+                ></button>
               </div>
-              <div className="modal-body text-center">
-                <img src={selectedImage || '/placeholder.jpg'} alt="Producto" className="img-fluid" />
+              <div className="modal-body text-center p-0">
+                <img 
+                  src={selectedImage.url} 
+                  alt={selectedImage.name || 'Producto'} 
+                  className="img-fluid w-100"
+                  style={{ maxHeight: '80vh', objectFit: 'contain' }}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/placeholder.jpg';
+                  }}
+                />
               </div>
             </div>
           </div>

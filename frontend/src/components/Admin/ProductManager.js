@@ -9,15 +9,17 @@ const ProductManager = () => {
     name: '',
     description: '',
     price: '',
-    image: '',
     year: '',
     subject: '',
-    code: '' // NUEVO
+    code: ''
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [viewMode, setViewMode] = useState('table'); // 'table' o 'list'
 
   useEffect(() => {
     fetchProducts();
@@ -61,7 +63,7 @@ const ProductManager = () => {
         ...formData,
         price: parseFloat(formData.price)
       };
-      debugger;
+      
       if (editingProduct) {
         await productService.updateProduct(
           editingProduct._id, 
@@ -80,7 +82,6 @@ const ProductManager = () => {
       
       fetchProducts();
       
-      // Cerrar el formulario después de 1 segundo para que el usuario vea el mensaje de éxito
       setTimeout(() => {
         setShowForm(false);
         resetForm();
@@ -98,7 +99,6 @@ const ProductManager = () => {
       name: product.name,
       description: product.description,
       price: product.price,
-      image: product.image,
       year: product.year,
       subject: product.subject,
       code: product.code || '',
@@ -118,7 +118,6 @@ const ProductManager = () => {
       fetchProducts();
       setSuccess('Producto eliminado exitosamente');
       
-      // Ocultar el mensaje después de 3 segundos
       setTimeout(() => {
         setSuccess(null);
       }, 3000);
@@ -134,7 +133,6 @@ const ProductManager = () => {
       name: '',
       description: '',
       price: '',
-      image: '',
       year: '',
       subject: ''
     });
@@ -156,18 +154,45 @@ const ProductManager = () => {
     }).format(price);
   };
 
+  const handleViewImage = (product) => {
+    const imageUrl = product.hasImage 
+      ? `${process.env.REACT_APP_API_URL || ''}/api/files/product/${product._id}`
+      : '/placeholder.jpg';
+    setSelectedImage({ url: imageUrl, name: product.name });
+    setShowImageModal(true);
+  };
+
   return (
     <div className="product-manager">
-      {/* Cabecera y botón de agregar */}
+      {/* Cabecera con botones */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3>Catálogo de Productos</h3>
-        <button 
-          className="btn btn-primary"
-          onClick={() => { setShowForm(true); resetForm(); }}
-        >
-          <i className="fas fa-plus me-2"></i>
-          Agregar Producto
-        </button>
+        <div className="d-flex gap-2">
+          {/* Botones de vista */}
+          <div className="btn-group" role="group">
+            <button 
+              type="button" 
+              className={`btn btn-sm ${viewMode === 'table' ? 'btn-primary' : 'btn-outline-secondary'}`}
+              onClick={() => setViewMode('table')}
+            >
+              <i className="fas fa-table"></i>
+            </button>
+            <button 
+              type="button" 
+              className={`btn btn-sm ${viewMode === 'list' ? 'btn-primary' : 'btn-outline-secondary'}`}
+              onClick={() => setViewMode('list')}
+            >
+              <i className="fas fa-list"></i>
+            </button>
+          </div>
+          <button 
+            className="btn btn-primary"
+            onClick={() => { setShowForm(true); resetForm(); }}
+          >
+            <i className="fas fa-plus me-2"></i>
+            Agregar Producto
+          </button>
+        </div>
       </div>
       
       {/* Mensajes de éxito o error */}
@@ -216,7 +241,6 @@ const ProductManager = () => {
                 
                 <form onSubmit={handleSubmit}>
                   <div className="row g-3">
-                    {/* Nombre del producto */}
                     <div className="col-md-8">
                       <label htmlFor="name" className="form-label">Nombre del producto:</label>
                       <input
@@ -230,7 +254,6 @@ const ProductManager = () => {
                       />
                     </div>
                     
-                    {/* Precio */}
                     <div className="col-md-4">
                       <label htmlFor="price" className="form-label">Precio:</label>
                       <div className="input-group">
@@ -249,7 +272,6 @@ const ProductManager = () => {
                       </div>
                     </div>
                     
-                    {/* Descripción */}
                     <div className="col-12">
                       <label htmlFor="description" className="form-label">Descripción:</label>
                       <textarea
@@ -263,7 +285,6 @@ const ProductManager = () => {
                       ></textarea>
                     </div>
                     
-                    {/* Año escolar */}
                     <div className="col-md-6">
                       <label htmlFor="year" className="form-label">Año escolar:</label>
                       <select
@@ -275,12 +296,15 @@ const ProductManager = () => {
                         required
                       >
                         <option value="">Seleccionar año</option>
+                        <option value="7mo grado">7mo grado</option>
                         <option value="1er año">1er año</option>
                         <option value="2do año">2do año</option>
+                        <option value="3er año">3er año</option>
+                        <option value="4to año">4to año</option>                        
+                        <option value="5to año">5to año</option>
                       </select>
                     </div>
                     
-                    {/* Materia */}
                     <div className="col-md-6">
                       <label htmlFor="subject" className="form-label">Materia:</label>
                       <input
@@ -293,6 +317,7 @@ const ProductManager = () => {
                         required
                       />
                     </div>
+                    
                     <div className="col-md-6">
                       <label htmlFor="code" className="form-label">Código de Producto:</label>
                       <input
@@ -306,7 +331,6 @@ const ProductManager = () => {
                       />
                     </div>
                     
-                    {/* Imagen */}
                     <div className="col-12">
                       <label htmlFor="image" className="form-label">Imagen:</label>
                       <input
@@ -341,14 +365,14 @@ const ProductManager = () => {
         </div>
       )}
 
-      {/* Tabla de productos */}
+      {/* Vista de tabla */}
       {loading ? (
         <div className="d-flex justify-content-center my-5">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Cargando...</span>
           </div>
         </div>
-      ) : (
+      ) : viewMode === 'table' ? (
         <div className="table-responsive">
           <table className="table table-striped table-hover">
             <thead>
@@ -374,12 +398,17 @@ const ProductManager = () => {
                   <tr key={product._id}>
                     <td className="align-middle">
                       <div className="product-thumbnail">
-                        {product.imageUrl ? (
+                        {product.hasImage ? (
                           <img 
-                            src={product.imageUrl} 
+                            src={`${process.env.REACT_APP_API_URL || ''}/api/files/product/${product._id}`} 
                             alt={product.name}
                             className="img-thumbnail"
-                            style={{width: '60px', height: '60px', objectFit: 'cover'}}
+                            style={{width: '60px', height: '60px', objectFit: 'cover', cursor: 'pointer'}}
+                            onClick={() => handleViewImage(product)}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = '/placeholder.jpg';
+                            }}
                           />
                         ) : (
                           <div className="text-center text-muted">
@@ -427,6 +456,93 @@ const ProductManager = () => {
               )}
             </tbody>
           </table>
+        </div>
+      ) : (
+        /* Vista de lista */
+        <div className="list-view">
+          {products.map(product => (
+            <div key={product._id} className="card mb-3">
+              <div className="card-body">
+                <div className="row align-items-center">
+                  <div className="col-md-2 text-center">
+                    <button 
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => handleViewImage(product)}
+                    >
+                      <i className="fas fa-image me-1"></i>
+                      Ver Foto
+                    </button>
+                  </div>
+                  <div className="col-md-6">
+                    <h4 className="h5 fw-semibold">{product.name}</h4>
+                    <p className="text-muted mb-2">{product.description}</p>
+                    <div className="d-flex gap-2">
+                      <span className="badge bg-secondary">{product.year}</span>
+                      <span className="badge bg-info text-dark">{product.subject}</span>
+                      {product.code && <span className="badge bg-light text-dark">Código: {product.code}</span>}
+                    </div>
+                  </div>
+                  <div className="col-md-2 text-center">
+                    <div className="h4 text-primary fw-bold">
+                      ${formatPrice(product.price)}
+                    </div>
+                  </div>
+                  <div className="col-md-2 text-end">
+                    <div className="btn-group-vertical" role="group">
+                      <button 
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={() => handleEdit(product)}
+                      >
+                        <i className="fas fa-edit me-1"></i>
+                        Editar
+                      </button>
+                      <button 
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleDelete(product._id)}
+                      >
+                        <i className="fas fa-trash me-1"></i>
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal para imagen */}
+      {showImageModal && selectedImage && (
+        <div 
+          className="modal d-block" 
+          style={{backgroundColor: 'rgba(0,0,0,0.8)'}} 
+          onClick={() => setShowImageModal(false)}
+        >
+          <div className="modal-dialog modal-dialog-centered modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">{selectedImage.name || 'Vista de Imagen'}</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => setShowImageModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body text-center p-0">
+                <img 
+                  src={selectedImage.url} 
+                  alt={selectedImage.name || 'Producto'} 
+                  className="img-fluid w-100"
+                  style={{ maxHeight: '80vh', objectFit: 'contain' }}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/placeholder.jpg';
+                  }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
