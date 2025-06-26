@@ -9,7 +9,8 @@ const Landing = () => {
   const [products, setProducts] = useState([]);
   const [filters, setFilters] = useState({
     year: '',
-    subject: ''
+    subject: '',
+    code: ''  // Agregar esta línea
   });
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +30,7 @@ const Landing = () => {
       const params = {};
       if (filters.year) params.year = filters.year;
       if (filters.subject) params.subject = filters.subject;
-      
+      if (filters.code) params.code = filters.code;  
       const data = await productService.getProducts(params);
       setProducts(data);
       
@@ -200,6 +201,18 @@ const Landing = () => {
                       <option value="5to año">5to año</option>
                     </select>
                   </div>
+                  <div className="col-md-6">
+                    <label htmlFor="code" className="form-label">Código de producto:</label>
+                    <input 
+                      type="text"
+                      id="code" 
+                      name="code" 
+                      value={filters.code} 
+                      onChange={handleFilterChange}
+                      className="form-control"
+                      placeholder="Buscar por código..."
+                    />
+                </div>
                 </div>
               </div>
             </div>

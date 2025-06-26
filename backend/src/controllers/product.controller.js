@@ -5,11 +5,15 @@ const productController = {
 // Modificación en product.controller.js - método getProducts
   async getProducts(req, res) {
     try {
-      const { year, subject } = req.query;
-      
+      const { year, subject, code } = req.query;
+
       const query = {};
       if (year) query.year = year;
       if (subject) query.subject = subject;
+      if (code) {
+        // Búsqueda case-insensitive y parcial
+        query.code = { $regex: code, $options: 'i' };
+      }
       
       const products = await Product.find(query);
       

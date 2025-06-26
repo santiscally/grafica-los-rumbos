@@ -51,6 +51,12 @@ const ProductCard = ({ product }) => {
         <span className="position-absolute top-0 start-0 m-3 badge bg-primary">
           {product.year}
         </span>
+
+        {product.code && (
+        <span className="position-absolute top-0 end-0 m-3 badge bg-dark">
+          {product.code}
+        </span>
+        )}
       </div>
       
       {/* Contenido de la tarjeta */}

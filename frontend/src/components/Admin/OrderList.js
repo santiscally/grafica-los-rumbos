@@ -333,6 +333,9 @@ const OrderList = () => {
                       ) : (
                         order.products.map((item, index) => (
                           <div key={index} className="small">
+                            {item.productId?.code && (
+                              <span className="badge bg-light text-dark me-1">{item.productId.code}</span>
+                            )}
                             {item.productId?.name || item.name || 'Producto'} 
                             <span className="badge bg-secondary ms-1">x{item.quantity}</span>
                           </div>

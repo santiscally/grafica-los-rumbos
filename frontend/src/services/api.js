@@ -17,6 +17,14 @@ api.interceptors.request.use(
     return config;
   },
   error => {
+    if (error.response && error.response.status === 401) {
+      // Token inválido o expirado
+      localStorage.removeItem('token');
+      // Redirigir al login solo si estamos en la ruta admin
+      if (window.location.pathname.includes('/admin')) {
+        window.location.href = '/admin';
+      }
+    }
     return Promise.reject(error);
   }
 );

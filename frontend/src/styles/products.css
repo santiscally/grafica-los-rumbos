@@ -100,3 +100,11 @@
   position: relative;
   z-index: 1;
 }
+
+.product-card-enhanced .badge {
+  z-index: 1;
+}
+
+.product-card-enhanced .badge.bg-dark {
+  font-size: 0.75rem;
+}
