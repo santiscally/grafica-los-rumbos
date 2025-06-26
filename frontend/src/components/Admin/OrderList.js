@@ -433,7 +433,7 @@ const OrderList = () => {
                           onClick={() => handleDownloadPDF(order)}
                         >
                           <i className="fas fa-print"></i>
-                        </button>doc
+                        </button>
                         {order.customOrder && order.files && order.files.length > 0 && (
                           <button
                             className="btn btn-sm btn-outline-info"
