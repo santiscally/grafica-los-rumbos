@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { orderService } from '../../services/api';
 import api from '../../services/api';
+import html2pdf from 'html2pdf.js';
 
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
@@ -193,7 +194,31 @@ const OrderList = () => {
         return 'bg-secondary text-white';
     }
   };
-
+  const handleDownloadPDF = async (order) => {
+    try {
+      // Obtener el HTML del backend
+      const htmlContent = await orderService.downloadOrderInfo(order._id);
+      
+      // Crear una nueva ventana
+      const printWindow = window.open('', '_blank', 'width=350,height=600');
+      
+      // Escribir el HTML en la nueva ventana
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      
+      // Esperar a que cargue y luego imprimir
+      printWindow.onload = function() {
+        // Dar un pequeño delay para asegurar que los estilos se apliquen
+        setTimeout(() => {
+          printWindow.print();
+        }, 250);
+      };
+      
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      alert('Error al generar el PDF');
+    }
+  };
   return (
     <div>
       <div className="card mb-4">
@@ -404,11 +429,11 @@ const OrderList = () => {
                       <div className="d-flex gap-1">
                         <button
                           className="btn btn-sm btn-outline-success"
-                          title="Descargar información"
-                          onClick={() => orderService.downloadOrderInfo(order._id)}
+                          title="Imprimir pedido"
+                          onClick={() => handleDownloadPDF(order)}
                         >
-                          <i className="fas fa-download"></i>
-                        </button>
+                          <i className="fas fa-print"></i>
+                        </button>doc
                         {order.customOrder && order.files && order.files.length > 0 && (
                           <button
                             className="btn btn-sm btn-outline-info"

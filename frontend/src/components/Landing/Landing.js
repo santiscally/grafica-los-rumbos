@@ -6,6 +6,9 @@ import '../../styles/landing.css';
 import { Link } from 'react-router-dom';
 
 const Landing = () => {
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [mobileSearchCode, setMobileSearchCode] = useState('');
   const [products, setProducts] = useState([]);
   const [filters, setFilters] = useState({
     year: '',
@@ -94,25 +97,100 @@ const Landing = () => {
   return (
     <div className="min-h-100vh bg-light">
       {/* Header Mejorado */}
-      <header className="border-bottom bg-white shadow-sm sticky-top">
-        <div className="container">
+    <header className="border-bottom bg-white shadow-sm sticky-top">
+      <div className="container">
+        {/* Desktop Header */}
+        <div className="d-none d-lg-flex justify-content-between align-items-center py-3">
+          <div className="d-flex align-items-center gap-2">
+            <i className="fas fa-print text-primary" style={{ fontSize: '2rem' }}></i>
+            <h1 className="h3 mb-0 fw-bold text-dark">Gráfica Los Rumbos</h1>
+          </div>
+          <nav className="d-flex align-items-center gap-3">
+            <Link to="/precios" className="btn btn-ghost text-dark">
+              Lista de Precios
+            </Link>
+            <Link to="/pedido-personalizado" className="btn btn-outline-primary d-flex align-items-center gap-2">
+              <i className="fas fa-upload"></i>
+              <span>Pedido Personalizado</span>
+            </Link>
+          </nav>
+        </div>
+
+        {/* Mobile Header */}
+        <div className="d-lg-none">
           <div className="d-flex justify-content-between align-items-center py-3">
+            {/* Hamburger Menu */}
+            <button 
+              className="btn btn-ghost p-2"
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+            >
+              <i className="fas fa-bars fs-4"></i>
+            </button>
+
+            {/* Logo */}
             <div className="d-flex align-items-center gap-2">
-              <i className="fas fa-print text-primary" style={{ fontSize: '2rem' }}></i>
-              <h1 className="h3 mb-0 fw-bold text-dark">Gráfica Los Rumbos</h1>
+              <i className="fas fa-print text-primary" style={{ fontSize: '1.5rem' }}></i>
+              <h1 className="h5 mb-0 fw-bold text-dark">Gráfica Los Rumbos</h1>
             </div>
-            <nav className="d-flex align-items-center gap-3">
-              <Link to="/precios" className="btn btn-ghost text-dark">
+
+            {/* Search Icon */}
+            <button 
+              className="btn btn-ghost p-2"
+              onClick={() => setShowMobileSearch(!showMobileSearch)}
+            >
+              <i className="fas fa-search fs-5"></i>
+            </button>
+          </div>
+
+          {/* Mobile Menu Dropdown */}
+          {showMobileMenu && (
+            <div className="border-top py-3">
+              <Link 
+                to="/precios" 
+                className="btn btn-ghost text-dark w-100 text-start mb-2"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                <i className="fas fa-list-alt me-2"></i>
                 Lista de Precios
               </Link>
-              <Link to="/pedido-personalizado" className="btn btn-outline-primary d-flex align-items-center gap-2">
+              <Link 
+                to="/pedido-personalizado" 
+                className="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2"
+                onClick={() => setShowMobileMenu(false)}
+              >
                 <i className="fas fa-upload"></i>
-                <span className="d-none d-md-inline">Pedido Personalizado</span>
+                Pedido Personalizado
               </Link>
-            </nav>
-          </div>
+            </div>
+          )}
+
+          {/* Mobile Search Dropdown */}
+          {showMobileSearch && (
+            <div className="border-top py-3">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                setFilters(prev => ({ ...prev, code: mobileSearchCode }));
+                setShowMobileSearch(false);
+              }}>
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Buscar por código..."
+                    value={mobileSearchCode}
+                    onChange={(e) => setMobileSearchCode(e.target.value)}
+                    autoFocus
+                  />
+                  <button className="btn btn-primary" type="submit">
+                    <i className="fas fa-search"></i>
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
         </div>
-      </header>
+      </div>
+    </header>
 
       {/* Hero Section Mejorado */}
       <section className="hero-gradient text-white py-5">
@@ -212,7 +290,7 @@ const Landing = () => {
                       className="form-control"
                       placeholder="Buscar por código..."
                     />
-                </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -245,43 +323,73 @@ const Landing = () => {
 
             {/* Vista Lista */}
             {!loading && !error && !vistaGrid && (
-              <div className="list-view">
-                {filteredProducts.map(product => (
-                  <div key={product._id} className="card mb-3">
-                    <div className="card-body">
-                      <div className="row align-items-center">
-                        <div className="col-md-2 text-center">
-                          <button 
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => handleViewImage(product)}
-                          >
-                            <i className="fas fa-image me-1"></i>
-                            Ver Foto
-                          </button>
-                        </div>
-                        <div className="col-md-7">
-                          <h4 className="h5 fw-semibold">{product.name}</h4>
-                          <p className="text-muted mb-2">{product.description}</p>
-                          <div className="d-flex gap-2">
-                            <span className="badge bg-secondary">{product.year}</span>
+              <div className="list-view-compact">
+                <div className="table-responsive">
+                  <table className="table table-hover">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Código</th>
+                        <th>Producto</th>
+                        <th className="d-none d-md-table-cell">Materia</th>
+                        <th className="d-none d-md-table-cell">Año</th>
+                        <th className="text-end">Precio</th>
+                        <th className="text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredProducts.map(product => (
+                        <tr key={product._id}>
+                          <td className="align-middle">
+                            {product.code ? (
+                              <span className="badge bg-light text-dark">{product.code}</span>
+                            ) : (
+                              <span className="text-muted">-</span>
+                            )}
+                          </td>
+                          <td className="align-middle">
+                            <div>
+                              <div className="fw-semibold">{product.name}</div>
+                              <small className="text-muted d-md-none">
+                                {product.year} • {product.subject}
+                              </small>
+                            </div>
+                          </td>
+                          <td className="align-middle d-none d-md-table-cell">
                             <span className="badge bg-info text-dark">{product.subject}</span>
-                          </div>
-                        </div>
-                        <div className="col-md-3 text-end">
-                          <div className="h3 text-primary fw-bold mb-3">
-                            ${formatPrice(product.price)}
-                          </div>
-                          <button 
-                            className="btn btn-primary"
-                            onClick={() => handleAddToCart(product)}
-                          >
-                            Agregar al carrito
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                          </td>
+                          <td className="align-middle d-none d-md-table-cell">
+                            <span className="badge bg-secondary">{product.year}</span>
+                          </td>
+                          <td className="align-middle text-end">
+                            <div className="fw-bold text-primary">
+                              ${formatPrice(product.price)}
+                            </div>
+                          </td>
+                          <td className="align-middle text-center">
+                            <div className="btn-group btn-group-sm" role="group">
+                              <button
+                                type="button"
+                                className="btn btn-outline-primary"
+                                onClick={() => handleViewImage(product)}
+                                title="Ver foto"
+                              >
+                                <i className="fas fa-image"></i>
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={() => handleAddToCart(product)}
+                                title="Agregar al carrito"
+                              >
+                                <i className="fas fa-plus"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

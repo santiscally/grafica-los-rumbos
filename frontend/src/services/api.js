@@ -168,21 +168,11 @@ export const orderService = {
   
   downloadOrderInfo: async (orderId) => {
     try {
-      const response = await api.get(`/orders/${orderId}/download`, {
-        responseType: 'blob'
-      });
-      
-      // Crear un link temporal para descargar
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `pedido-${orderId}.html`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      const response = await api.get(`/orders/${orderId}/download`);
+      return response.data; // Retorna el HTML en lugar de descargarlo
     } catch (error) {
-      console.error('Error descargando información del pedido:', error);
+      console.error('Error obteniendo información del pedido:', error);
+      throw error;
     }
   },
   

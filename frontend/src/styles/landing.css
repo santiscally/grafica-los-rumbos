@@ -254,3 +254,88 @@ footer h4::after {
   position: relative;
   z-index: 1;
 }
+
+/* Vista Lista Compacta */
+.list-view-compact {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.list-view-compact .table {
+  margin-bottom: 0;
+}
+
+.list-view-compact .table th {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.75rem;
+}
+
+.list-view-compact .table td {
+  padding: 0.5rem 0.75rem;
+  vertical-align: middle;
+}
+
+.list-view-compact .btn-group-sm .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Mobile Menu Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.d-lg-none > div:nth-child(2),
+.d-lg-none > div:nth-child(3) {
+  animation: slideDown 0.2s ease-out;
+}
+
+/* Responsive adjustments para header mobile */
+@media (max-width: 576px) {
+  .list-view-compact .table {
+    font-size: 0.875rem;
+  }
+  
+  .list-view-compact .table th,
+  .list-view-compact .table td {
+    padding: 0.5rem;
+  }
+  
+  header h1.h5 {
+    font-size: 1rem !important;
+  }
+  
+  .btn-ghost {
+    padding: 0.25rem 0.5rem !important;
+  }
+}
+
+/* Mejoras para el sticky sidebar en mobile */
+@media (max-width: 992px) {
+  .sticky-sidebar {
+    position: static;
+    margin-top: 2rem;
+  }
+  
+  /* Order form en mobile debe tomar todo el ancho */
+  .order-form-container {
+    max-width: 100%;
+  }
+}
+
+/* Ocultar la antigua vista lista */
+.list-view:not(.list-view-compact) {
+  display: none;
+}
