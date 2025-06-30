@@ -6,6 +6,7 @@ const OrderForm = () => {
   const [cart, setCart] = useState([]);
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
+    lastname: '',  // Nuevo campo apellido
     email: '',
     phone: ''
   });
@@ -74,7 +75,7 @@ const OrderForm = () => {
       return;
     }
     
-    if (!customerInfo.name || !customerInfo.email || !customerInfo.phone) {
+    if (!customerInfo.name || !customerInfo.lastname || !customerInfo.email || !customerInfo.phone) {
       setMessage('Por favor completa todos los campos');
       return;
     }
@@ -85,8 +86,11 @@ const OrderForm = () => {
       // Formatear el teléfono antes de enviar
       const formattedPhone = formatPhoneNumber(customerInfo.phone);
       
+      // Concatenar nombre y apellido
+      const fullName = `${customerInfo.name.trim()} ${customerInfo.lastname.trim()}`;
+      
       const order = {
-        customerName: customerInfo.name,
+        customerName: fullName,  // Enviar nombre completo
         customerEmail: customerInfo.email,
         customerPhone: formattedPhone,
         products: cart.map(item => ({
@@ -102,7 +106,7 @@ const OrderForm = () => {
       // Limpiar carrito
       localStorage.removeItem('cart');
       setCart([]);
-      setCustomerInfo({ name: '', email: '', phone: '' });
+      setCustomerInfo({ name: '', lastname: '', email: '', phone: '' });
       
     } catch (error) {
       setMessage('Error al procesar el pedido. Intenta nuevamente.');
@@ -188,19 +192,36 @@ const OrderForm = () => {
           <h3>Información de contacto</h3>
         </div>
         
-        <div className="form-group">
-          <label htmlFor="name">
-            <i className="fas fa-user"></i> Nombre:
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={customerInfo.name}
-            onChange={handleChange}
-            placeholder="Tu nombre completo"
-            required
-          />
+        <div className="name-fields-row">
+          <div className="form-group">
+            <label htmlFor="name">
+              <i className="fas fa-user"></i> Nombre:
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={customerInfo.name}
+              onChange={handleChange}
+              placeholder="Tu nombre"
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="lastname">
+              <i className="fas fa-user"></i> Apellido:
+            </label>
+            <input
+              type="text"
+              id="lastname"
+              name="lastname"
+              value={customerInfo.lastname}
+              onChange={handleChange}
+              placeholder="Tu apellido"
+              required
+            />
+          </div>
         </div>
         
         <div className="form-group">

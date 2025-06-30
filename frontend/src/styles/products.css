@@ -108,3 +108,43 @@
 .product-card-enhanced .badge.bg-dark {
   font-size: 0.75rem;
 }
+
+/* Agregar estos estilos a products.css */
+
+/* Sección de código de producto mejorada */
+.product-code-section {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.product-card-enhanced:hover .product-code-section {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.product-code-section small {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+}
+
+.product-code-section .h5 {
+  font-size: 1.25rem;
+  color: #212529;
+  font-family: 'Courier New', monospace;
+}
+
+/* Ajustes para el layout responsive del formulario */
+@media (max-width: 768px) {
+  .order-customer-form .row {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  .order-customer-form .col-md-6 {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}

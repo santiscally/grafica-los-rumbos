@@ -425,7 +425,7 @@ const OrderList = () => {
                       </select>
                     </td>
                     <td>{formatDate(order.createdAt)}</td>
-                                        <td>
+                    <td>
                       <div className="d-flex gap-1">
                         <button
                           className="btn btn-sm btn-outline-success"

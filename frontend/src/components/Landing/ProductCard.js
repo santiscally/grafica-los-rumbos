@@ -51,12 +51,6 @@ const ProductCard = ({ product }) => {
         <span className="position-absolute top-0 start-0 m-3 badge bg-primary">
           {product.year}
         </span>
-
-        {product.code && (
-        <span className="position-absolute top-0 end-0 m-3 badge bg-dark">
-          {product.code}
-        </span>
-        )}
       </div>
       
       {/* Contenido de la tarjeta */}
@@ -74,8 +68,16 @@ const ProductCard = ({ product }) => {
           {product.description}
         </p>
         
+        {/* Código de producto - Nueva sección más visible */}
+        {product.code && (
+          <div className="product-code-section mb-3 p-2 bg-light rounded">
+            <small className="text-muted d-block mb-1">Código de producto:</small>
+            <span className="h5 mb-0 fw-bold text-dark">{product.code}</span>
+          </div>
+        )}
+        
         {/* Precio */}
-        <div className="d-flex justify-content-between align-items-center mt-3">
+        <div className="d-flex justify-content-between align-items-center mt-auto">
           <span className="h4 mb-0 text-primary fw-bold">
             ${formatPrice(product.price)}
           </span>
