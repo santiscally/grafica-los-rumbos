@@ -1,5 +1,3 @@
-
-
 /* Estilos generales mejorados */
 * {
   margin: 0;
@@ -15,6 +13,20 @@ body {
 
 .App {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Asegurar que todas las páginas principales tengan flex */
+.min-h-100vh {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Footer fijo al fondo */
+footer.mt-auto {
+  margin-top: auto !important;
 }
 
 /* Landing Page Mejorada */

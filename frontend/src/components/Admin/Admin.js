@@ -278,6 +278,49 @@ const Admin = () => {
         {activeTab === 'notifications' && <NotificationPanel />}
         {activeTab === 'precios' && <PriceManager />}
       </div>
+
+      {/* Footer con powered by */}
+      <footer className="mt-auto border-top bg-white py-3">
+        <div className="container-fluid">
+          <div className="d-flex justify-content-between align-items-center">
+            <p className="text-muted mb-0 small">&copy; 2025 Gráfica Los Rumbos - Panel de Administración</p>
+            <a 
+              href="https://simpleapps.com.ar" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-decoration-none d-flex align-items-center gap-1"
+              style={{
+                fontSize: '0.8rem',
+                color: '#6c757d',
+                padding: '4px 10px',
+                borderRadius: '15px',
+                background: 'rgba(0, 0, 0, 0.03)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#0d6efd';
+                e.currentTarget.style.background = 'rgba(13, 110, 253, 0.1)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#6c757d';
+                e.currentTarget.style.background = 'rgba(0, 0, 0, 0.03)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <span style={{ opacity: 0.7 }}>powered by</span>
+              <span style={{ 
+                fontFamily: 'monospace', 
+                fontWeight: '700',
+                fontSize: '0.9rem'
+              }}>
+                &lt;s/a&gt;
+              </span>
+              <span style={{ fontWeight: '500' }}>Simple Apps</span>
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
