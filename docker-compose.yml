@@ -7,9 +7,11 @@ services:
       dockerfile: Dockerfile
     ports:
     - "80:80"
+    - "443:443"  # Puerto HTTPS agregado
     restart: always
     volumes:
       - ./frontend/assets:/usr/share/nginx/html/assets
+      - ./ssl:/etc/nginx/ssl  # Volumen para certificados SSL
     networks:
       - grafica-network
 
