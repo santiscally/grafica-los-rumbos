@@ -1,4 +1,4 @@
-// backend/src/index.js - ARCHIVO COMPLETO
+// backend/src/index.js - ACTUALIZADO CON CATEGORÍAS
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -9,6 +9,7 @@ const productRoutes = require('./routes/product.routes');
 const orderRoutes = require('./routes/order.routes');
 const fileRoutes = require('./routes/file.routes');
 const priceRoutes = require('./routes/price.routes');
+const categoryRoutes = require('./routes/category.routes'); // NUEVA LÍNEA
 const filesystemService = require('./services/filesystem.service');
 
 const app = express();
@@ -45,6 +46,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/prices', priceRoutes);
+app.use('/api/categories', categoryRoutes); // NUEVA LÍNEA
 
 // Health check
 app.get('/health', (req, res) => {

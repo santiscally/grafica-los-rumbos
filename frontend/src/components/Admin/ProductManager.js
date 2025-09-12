@@ -1,17 +1,25 @@
+// frontend/src/components/Admin/ProductManager.js - ACTUALIZADO CON CATEGORÍAS
 import React, { useState, useEffect } from 'react';
-import { productService } from '../../services/api';
+import { productService, categoryService } from '../../services/api';
 
 const ProductManager = () => {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
+    category: '',
+    subcategory: '',
     year: '',
     subject: '',
-    code: ''
+    code: '',
+    featured: false,
+    discount: 0,
+    stock: 100
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,11 +27,22 @@ const ProductManager = () => {
   const [success, setSuccess] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [viewMode, setViewMode] = useState('table'); // 'table' o 'list'
+  const [viewMode, setViewMode] = useState('table');
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
+
+  useEffect(() => {
+    // Actualizar subcategorías cuando cambie la categoría seleccionada
+    if (formData.category) {
+      const selectedCategory = categories.find(cat => cat._id === formData.category);
+      setSubcategories(selectedCategory?.subcategories || []);
+    } else {
+      setSubcategories([]);
+    }
+  }, [formData.category, categories]);
 
   const fetchProducts = async () => {
     try {
@@ -39,11 +58,20 @@ const ProductManager = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const data = await categoryService.getCategories();
+      setCategories(data);
+    } catch (err) {
+      console.error('Error al cargar categorías:', err);
+    }
+  };
+
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -59,9 +87,17 @@ const ProductManager = () => {
     setSuccess(null);
     
     try {
+      if (!formData.category) {
+        setError('Debe seleccionar una categoría');
+        return;
+      }
+
       const productData = {
         ...formData,
-        price: parseFloat(formData.price)
+        price: parseFloat(formData.price),
+        discount: parseFloat(formData.discount) || 0,
+        stock: parseInt(formData.stock) || 100,
+        subcategory: formData.subcategory || null
       };
       
       if (editingProduct) {
@@ -99,9 +135,14 @@ const ProductManager = () => {
       name: product.name,
       description: product.description,
       price: product.price,
-      year: product.year,
-      subject: product.subject,
+      category: product.category?._id || product.category || '',
+      subcategory: product.subcategory?._id || product.subcategory || '',
+      year: product.year || '',
+      subject: product.subject || '',
       code: product.code || '',
+      featured: product.featured || false,
+      discount: product.discount || 0,
+      stock: product.stock || 100
     });
     setShowForm(true);
     setError(null);
@@ -133,13 +174,20 @@ const ProductManager = () => {
       name: '',
       description: '',
       price: '',
+      category: '',
+      subcategory: '',
       year: '',
-      subject: ''
+      subject: '',
+      code: '',
+      featured: false,
+      discount: 0,
+      stock: 100
     });
     setSelectedFile(null);
     setEditingProduct(null);
     setError(null);
     setSuccess(null);
+    setSubcategories([]);
   };
 
   const handleCancel = () => {
@@ -242,7 +290,7 @@ const ProductManager = () => {
                 <form onSubmit={handleSubmit}>
                   <div className="row g-3">
                     <div className="col-md-8">
-                      <label htmlFor="name" className="form-label">Nombre del producto:</label>
+                      <label htmlFor="name" className="form-label">Nombre del producto: <span className="text-danger">*</span></label>
                       <input
                         type="text"
                         className="form-control"
@@ -255,7 +303,67 @@ const ProductManager = () => {
                     </div>
                     
                     <div className="col-md-4">
-                      <label htmlFor="price" className="form-label">Precio:</label>
+                      <label htmlFor="code" className="form-label">Código:</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="code"
+                        name="code"
+                        value={formData.code}
+                        onChange={handleInputChange}
+                        placeholder="Ej: PROD-001"
+                      />
+                    </div>
+                    
+                    <div className="col-12">
+                      <label htmlFor="description" className="form-label">Descripción: <span className="text-danger">*</span></label>
+                      <textarea
+                        className="form-control"
+                        id="description"
+                        name="description"
+                        rows="3"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        required
+                      ></textarea>
+                    </div>
+                    
+                    <div className="col-md-6">
+                      <label htmlFor="category" className="form-label">Categoría: <span className="text-danger">*</span></label>
+                      <select
+                        className="form-select"
+                        id="category"
+                        name="category"
+                        value={formData.category}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Seleccionar categoría</option>
+                        {categories.map(cat => (
+                          <option key={cat._id} value={cat._id}>{cat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="col-md-6">
+                      <label htmlFor="subcategory" className="form-label">Subcategoría:</label>
+                      <select
+                        className="form-select"
+                        id="subcategory"
+                        name="subcategory"
+                        value={formData.subcategory}
+                        onChange={handleInputChange}
+                        disabled={!formData.category || subcategories.length === 0}
+                      >
+                        <option value="">Sin subcategoría</option>
+                        {subcategories.map(subcat => (
+                          <option key={subcat._id} value={subcat._id}>{subcat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="col-md-4">
+                      <label htmlFor="price" className="form-label">Precio: <span className="text-danger">*</span></label>
                       <div className="input-group">
                         <span className="input-group-text">$</span>
                         <input
@@ -272,30 +380,43 @@ const ProductManager = () => {
                       </div>
                     </div>
                     
-                    <div className="col-12">
-                      <label htmlFor="description" className="form-label">Descripción:</label>
-                      <textarea
+                    <div className="col-md-4">
+                      <label htmlFor="discount" className="form-label">Descuento (%):</label>
+                      <input
+                        type="number"
                         className="form-control"
-                        id="description"
-                        name="description"
-                        rows="3"
-                        value={formData.description}
+                        id="discount"
+                        name="discount"
+                        value={formData.discount}
                         onChange={handleInputChange}
-                        required
-                      ></textarea>
+                        min="0"
+                        max="100"
+                      />
+                    </div>
+                    
+                    <div className="col-md-4">
+                      <label htmlFor="stock" className="form-label">Stock:</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        id="stock"
+                        name="stock"
+                        value={formData.stock}
+                        onChange={handleInputChange}
+                        min="0"
+                      />
                     </div>
                     
                     <div className="col-md-6">
-                      <label htmlFor="year" className="form-label">Año escolar:</label>
+                      <label htmlFor="year" className="form-label">Año escolar (opcional):</label>
                       <select
                         className="form-select"
                         id="year"
                         name="year"
                         value={formData.year}
                         onChange={handleInputChange}
-                        required
                       >
-                        <option value="">Seleccionar año</option>
+                        <option value="">Sin especificar</option>
                         <option value="7mo grado">7mo grado</option>
                         <option value="1er año">1er año</option>
                         <option value="2do año">2do año</option>
@@ -306,7 +427,7 @@ const ProductManager = () => {
                     </div>
                     
                     <div className="col-md-6">
-                      <label htmlFor="subject" className="form-label">Materia:</label>
+                      <label htmlFor="subject" className="form-label">Materia (opcional):</label>
                       <input
                         type="text"
                         className="form-control"
@@ -314,21 +435,24 @@ const ProductManager = () => {
                         name="subject"
                         value={formData.subject}
                         onChange={handleInputChange}
-                        required
+                        placeholder="Ej: Matemática"
                       />
                     </div>
                     
-                    <div className="col-md-6">
-                      <label htmlFor="code" className="form-label">Código de Producto:</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="code"
-                        name="code"
-                        value={formData.code}
-                        onChange={handleInputChange}
-                        placeholder="Ej: PROD-001"
-                      />
+                    <div className="col-12">
+                      <div className="form-check">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          id="featured"
+                          name="featured"
+                          checked={formData.featured}
+                          onChange={handleInputChange}
+                        />
+                        <label className="form-check-label" htmlFor="featured">
+                          Producto destacado
+                        </label>
+                      </div>
                     </div>
                     
                     <div className="col-12">
@@ -379,10 +503,10 @@ const ProductManager = () => {
               <tr>
                 <th>Imagen</th>
                 <th>Producto</th>
-                <th>Descripción</th>
+                <th>Categoría</th>
                 <th>Precio</th>
-                <th>Categorización</th>
-                <th>Código</th>
+                <th>Stock</th>
+                <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -419,20 +543,30 @@ const ProductManager = () => {
                     </td>
                     <td className="align-middle">
                       <strong>{product.name}</strong>
+                      {product.code && <div className="small text-muted">Código: {product.code}</div>}
                     </td>
-                    <td className="align-middle small">
-                      {product.description.length > 100 
-                        ? `${product.description.substring(0, 100)}...` 
-                        : product.description}
+                    <td className="align-middle">
+                      {product.category?.name || 'Sin categoría'}
+                      {product.subcategory && (
+                        <div className="small text-muted">{product.subcategory.name}</div>
+                      )}
                     </td>
                     <td className="align-middle">
                       <span className="fw-bold">${formatPrice(product.price)}</span>
+                      {product.discount > 0 && (
+                        <div className="small text-danger">-{product.discount}%</div>
+                      )}
                     </td>
                     <td className="align-middle">
-                      <span className="badge bg-primary me-2">{product.year}</span>
-                      <span className="badge bg-info text-dark">{product.subject}</span>
+                      <span className={`badge ${product.stock > 10 ? 'bg-success' : 'bg-warning'}`}>
+                        {product.stock}
+                      </span>
                     </td>
-                    <td>{product.code || '-'}</td>
+                    <td className="align-middle">
+                      {product.featured && (
+                        <span className="badge bg-primary">Destacado</span>
+                      )}
+                    </td>
                     <td className="align-middle">
                       <div className="btn-group" role="group">
                         <button 
@@ -477,15 +611,19 @@ const ProductManager = () => {
                     <h4 className="h5 fw-semibold">{product.name}</h4>
                     <p className="text-muted mb-2">{product.description}</p>
                     <div className="d-flex gap-2">
-                      <span className="badge bg-secondary">{product.year}</span>
-                      <span className="badge bg-info text-dark">{product.subject}</span>
+                      <span className="badge bg-secondary">{product.category?.name || 'Sin categoría'}</span>
+                      {product.subcategory && <span className="badge bg-info text-dark">{product.subcategory.name}</span>}
                       {product.code && <span className="badge bg-light text-dark">Código: {product.code}</span>}
+                      {product.featured && <span className="badge bg-primary">Destacado</span>}
                     </div>
                   </div>
                   <div className="col-md-2 text-center">
                     <div className="h4 text-primary fw-bold">
                       ${formatPrice(product.price)}
                     </div>
+                    {product.discount > 0 && (
+                      <span className="badge bg-danger">-{product.discount}%</span>
+                    )}
                   </div>
                   <div className="col-md-2 text-end">
                     <div className="btn-group-vertical" role="group">

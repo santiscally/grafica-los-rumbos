@@ -1,4 +1,4 @@
-// frontend/src/services/api.js - REEMPLAZAR TODO
+// frontend/src/services/api.js - ACTUALIZACIÓN COMPLETA
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || '/api';
@@ -18,9 +18,7 @@ api.interceptors.request.use(
   },
   error => {
     if (error.response && error.response.status === 401) {
-      // Token inválido o expirado
       localStorage.removeItem('token');
-      // Redirigir al login solo si estamos en la ruta admin
       if (window.location.pathname.includes('/admin')) {
         window.location.href = '/admin';
       }
@@ -37,11 +35,69 @@ export const authService = {
   }
 };
 
-// Servicios de productos
+// Servicios de categorías
+export const categoryService = {
+  getCategories: async (params = {}) => {
+    const response = await api.get('/categories', { params });
+    return response.data;
+  },
+  
+  getCategoryById: async (id) => {
+    const response = await api.get(`/categories/${id}`);
+    return response.data;
+  },
+  
+  getCategoryProducts: async (categoryId, params = {}) => {
+    const response = await api.get(`/categories/${categoryId}/products`, { params });
+    return response.data;
+  },
+  
+  createCategory: async (categoryData) => {
+    const response = await api.post('/categories', categoryData);
+    return response.data;
+  },
+  
+  updateCategory: async (id, categoryData) => {
+    const response = await api.put(`/categories/${id}`, categoryData);
+    return response.data;
+  },
+  
+  deleteCategory: async (id) => {
+    const response = await api.delete(`/categories/${id}`);
+    return response.data;
+  },
+  
+  getAvailableIcons: async () => {
+    const response = await api.get('/categories/icons');
+    return response.data;
+  }
+};
+
+// Servicios de productos actualizados
 export const productService = {
   getProducts: async (params = {}) => {
     const response = await api.get('/products', { params });
-    return response.data;
+    return response.data.products || response.data;
+  },
+  
+  getFeaturedProducts: async () => {
+    const response = await api.get('/products', { 
+      params: { featured: true, limit: 8 } 
+    });
+    return response.data.products || response.data;
+  },
+  
+  getNewProducts: async () => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const response = await api.get('/products', { 
+      params: { 
+        createdAfter: thirtyDaysAgo.toISOString(),
+        limit: 8,
+        sort: '-createdAt'
+      } 
+    });
+    return response.data.products || response.data;
   },
   
   uploadImage: async (file) => {
@@ -58,11 +114,9 @@ export const productService = {
   
   createProduct: async (productData, imageFile) => {
     try {
-      // Primero crear el producto
       const response = await api.post('/products', productData);
       const product = response.data;
       
-      // Si hay imagen, subirla con el ID del producto
       if (imageFile && product._id) {
         const formData = new FormData();
         formData.append('file', imageFile);
@@ -74,13 +128,11 @@ export const productService = {
           }
         });
         
-        // Actualizar el producto para indicar que tiene imagen
         await api.put(`/products/${product._id}`, { hasImage: true });
       }
       
       return product;
     } catch (error) {
-      // Si algo falla y se creó el producto, intentar eliminarlo
       if (error.response && productData._id) {
         try {
           await api.delete(`/products/${productData._id}`);
@@ -95,7 +147,6 @@ export const productService = {
   updateProduct: async (id, productData, imageFile = null) => {
     let updatedProduct = { ...productData };
     
-    // Si hay una nueva imagen, subirla
     if (imageFile) {
       const formData = new FormData();
       formData.append('file', imageFile);
@@ -169,7 +220,7 @@ export const orderService = {
   downloadOrderInfo: async (orderId) => {
     try {
       const response = await api.get(`/orders/${orderId}/download`);
-      return response.data; // Retorna el HTML en lugar de descargarlo
+      return response.data;
     } catch (error) {
       console.error('Error obteniendo información del pedido:', error);
       throw error;
@@ -182,7 +233,6 @@ export const orderService = {
         responseType: 'blob'
       });
       
-      // Crear un link temporal para descargar
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;

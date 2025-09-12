@@ -1,9 +1,10 @@
-// frontend/src/components/Admin/Admin.js - ARCHIVO COMPLETO
+// frontend/src/components/Admin/Admin.js - ACTUALIZADO CON CATEGORÍAS
 import React, { useState, useEffect } from 'react';
 import Login from './Login';
 import OrderList from './OrderList';
 import ProductManager from './ProductManager';
 import PriceManager from './PriceManager';
+import CategoryManager from './CategoryManager'; // NUEVA IMPORTACIÓN
 import NotificationPanel from './NotificationPanel';
 import { orderService } from '../../services/api';
 
@@ -98,6 +99,15 @@ const Admin = () => {
             >
               <i className="fas fa-shopping-bag me-2"></i>
               Pedidos
+            </button>
+          </li>
+          <li className="nav-item">
+            <button 
+              className={`nav-link ${activeTab === 'categories' ? 'active' : ''}`}
+              onClick={() => setActiveTab('categories')}
+            >
+              <i className="fas fa-folder me-2"></i>
+              Categorías
             </button>
           </li>
           <li className="nav-item">
@@ -223,25 +233,34 @@ const Admin = () => {
               </div>
               <div className="card-body">
                 <div className="row g-3">
-                  <div className="col-md-4">
+                  <div className="col-md-3">
                     <button 
                       className="btn btn-outline-primary w-100 py-3"
                       onClick={() => setActiveTab('orders')}
                     >
                       <i className="fas fa-eye mb-2 d-block" style={{ fontSize: '2rem' }}></i>
-                      Ver Pedidos Pendientes
+                      Ver Pedidos
                     </button>
                   </div>
-                  <div className="col-md-4">
+                  <div className="col-md-3">
+                    <button 
+                      className="btn btn-outline-info w-100 py-3"
+                      onClick={() => setActiveTab('categories')}
+                    >
+                      <i className="fas fa-folder mb-2 d-block" style={{ fontSize: '2rem' }}></i>
+                      Gestionar Categorías
+                    </button>
+                  </div>
+                  <div className="col-md-3">
                     <button 
                       className="btn btn-outline-success w-100 py-3"
                       onClick={() => setActiveTab('products')}
                     >
                       <i className="fas fa-plus mb-2 d-block" style={{ fontSize: '2rem' }}></i>
-                      Agregar Nuevo Producto
+                      Agregar Producto
                     </button>
                   </div>
-                  <div className="col-md-4">
+                  <div className="col-md-3">
                     <button 
                       className="btn btn-outline-warning w-100 py-3"
                       onClick={() => setActiveTab('precios')}
@@ -253,7 +272,7 @@ const Admin = () => {
                 </div>
                 <div className="alert alert-info mt-3">
                   <i className="fas fa-info-circle me-2"></i>
-                  <strong>Tip:</strong> En la lista de pedidos, usa el botón <i className="fas fa-receipt"></i> para generar un recibo imprimible de cada pedido.
+                  <strong>Tip:</strong> Crea primero las categorías antes de agregar productos. Los productos deben estar asociados a una categoría.
                 </div>
               </div>
             </div>
@@ -274,6 +293,7 @@ const Admin = () => {
 
         {/* Contenido de las pestañas */}
         {activeTab === 'orders' && <OrderList />}
+        {activeTab === 'categories' && <CategoryManager />}
         {activeTab === 'products' && <ProductManager />}
         {activeTab === 'notifications' && <NotificationPanel />}
         {activeTab === 'precios' && <PriceManager />}
