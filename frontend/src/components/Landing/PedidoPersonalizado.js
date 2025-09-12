@@ -402,7 +402,7 @@ const PedidoPersonalizado = () => {
       <footer className="mt-auto border-top bg-white py-3">
         <div className="container">
           <div className="d-flex justify-content-between align-items-center">
-            <p className="text-muted mb-0 small">&copy; 2025 Gráfica Los Rumbos</p>
+            <p className="text-muted mb-0 small">&copy; 2025 Rumbos Gráfica & Copias</p>
             <a 
               href="https://simpleapps.com.ar" 
               target="_blank" 

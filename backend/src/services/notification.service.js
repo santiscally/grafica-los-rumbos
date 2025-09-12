@@ -43,7 +43,7 @@ const sendEmail = async (to, subject, html) => {
       to,
       from: {
         email: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@graficalosrumbos.com',
-        name: process.env.EMAIL_FROM_NAME || 'Gráfica Los Rumbos'
+        name: process.env.EMAIL_FROM_NAME || 'Rumbos Gráfica & Copias'
       },
       subject,
       html
@@ -62,7 +62,7 @@ const sendEmail = async (to, subject, html) => {
     }
   } else if (emailService === 'gmail' && transporter) {
     const info = await transporter.sendMail({
-      from: `"Gráfica Los Rumbos" <${process.env.EMAIL_USER}>`,
+      from: `"Rumbos Gráfica & Copias" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html
@@ -109,13 +109,13 @@ const orderConfirmationTemplate = (order) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmación de Pedido - Gráfica Los Rumbos</title>
+    <title>Confirmación de Pedido - Rumbos Gráfica & Copias</title>
 </head>
 <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px;">
     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <!-- Header -->
         <div style="background-color: #0d6efd; padding: 20px; text-align: center; color: white;">
-            <h1 style="margin: 0; font-size: 24px;">Gráfica Los Rumbos</h1>
+            <h1 style="margin: 0; font-size: 24px;">Rumbos Gráfica & Copias</h1>
             <p style="margin: 5px 0 0;">Confirmación de Pedido</p>
         </div>
         
@@ -157,7 +157,7 @@ const orderConfirmationTemplate = (order) => {
             
             <div style="text-align: center; color: #999; font-size: 14px;">
                 <p>
-                    <strong>Gráfica Los Rumbos</strong><br>
+                    <strong>Rumbos Gráfica & Copias</strong><br>
                     Tel: +54 11 4567-8901<br>
                     info@graficalosrumbos.com
                 </p>
@@ -177,7 +177,7 @@ const orderReadyTemplate = (order) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedido Listo - Gráfica Los Rumbos</title>
+    <title>Pedido Listo - Rumbos Gráfica & Copias</title>
 </head>
 <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px;">
     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -211,7 +211,7 @@ const orderReadyTemplate = (order) => {
             
             <div style="text-align: center; color: #999; font-size: 14px;">
                 <p>
-                    <strong>Gráfica Los Rumbos</strong><br>
+                    <strong>Rumbos Gráfica & Copias</strong><br>
                     Tel: 4833-4057 / 4832-4854 <br>
                     WhatsApp: +54 11 6486-8948<br>
                     info@graficarumbos.com.ar  /  graficarumbos@gmail.com
@@ -282,7 +282,7 @@ const generateWhatsAppMessage = (order, type) => {
     
     message += `\n✅ Estado: Pendiente de proceso\n`;
     message += `\nTe avisaremos cuando esté listo para retirar.\n`;
-    message += `\n_Gráfica Los Rumbos_`;
+    message += `\n_Rumbos Gráfica & Copias_`;
     
     return message;
   }
@@ -299,7 +299,7 @@ const generateWhatsAppMessage = (order, type) => {
     message += `• Lunes a Viernes: 8:00 - 20:00\n`;
     message += `• Sábados: 9:00 - 13:00\n\n`;
     message += `Por favor, menciona tu número de pedido al retirar.\n\n`;
-    message += `_Gráfica Los Rumbos_\n`;
+    message += `_Rumbos Gráfica & Copias_\n`;
     message += `_Tel: +54 11 4567-8901_`;
     
     return message;
@@ -315,7 +315,7 @@ const notificationService = {
       try {
         await sendEmail(
           order.customerEmail,
-          `Confirmación de Pedido #${order.orderCode || order._id} - Gráfica Los Rumbos`,
+          `Confirmación de Pedido #${order.orderCode || order._id} - Rumbos Gráfica & Copias`,
           orderConfirmationTemplate(order)
         );
       } catch (error) {
@@ -337,7 +337,7 @@ const notificationService = {
       try {
         await sendEmail(
           order.customerEmail,
-          `¡Tu pedido está listo! #${order.orderCode || order._id} - Gráfica Los Rumbos`,
+          `¡Tu pedido está listo! #${order.orderCode || order._id} - Rumbos Gráfica & Copias`,
           orderReadyTemplate(order)
         );
       } catch (error) {

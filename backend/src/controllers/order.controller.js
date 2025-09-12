@@ -536,7 +536,7 @@ async downloadOrderInfo(req, res) {
       </head>
       <body>
         <div class="header">
-          <div class="logo">GRÁFICA LOS RUMBOS</div>
+          <div class="logo">Rumbos Gráfica & Copias</div>
           <div style="font-size: 10px;">Tel: 4833-4057 / 4832-4854</div>
           <div style="font-size: 10px;">WhatsApp: +54 11 6486-8948</div>
         </div>

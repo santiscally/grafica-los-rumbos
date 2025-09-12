@@ -283,7 +283,7 @@ const Admin = () => {
       <footer className="mt-auto border-top bg-white py-3">
         <div className="container-fluid">
           <div className="d-flex justify-content-between align-items-center">
-            <p className="text-muted mb-0 small">&copy; 2025 Gráfica Los Rumbos - Panel de Administración</p>
+            <p className="text-muted mb-0 small">&copy; 2025 Rumbos Gráfica & Copias - Panel de Administración</p>
             <a 
               href="https://simpleapps.com.ar" 
               target="_blank" 

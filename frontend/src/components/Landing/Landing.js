@@ -103,7 +103,7 @@ const Landing = () => {
         <div className="d-none d-lg-flex justify-content-between align-items-center py-3">
           <div className="d-flex align-items-center gap-2">
             <i className="fas fa-print text-primary" style={{ fontSize: '2rem' }}></i>
-            <h1 className="h3 mb-0 fw-bold text-dark">Gráfica Los Rumbos</h1>
+            <h1 className="h3 mb-0 fw-bold text-dark">Rumbos Gráfica & Copias</h1>
           </div>
           <nav className="d-flex align-items-center gap-3">
             <Link to="/precios" className="btn btn-ghost text-dark">
@@ -130,7 +130,7 @@ const Landing = () => {
             {/* Logo */}
             <div className="d-flex align-items-center gap-2">
               <i className="fas fa-print text-primary" style={{ fontSize: '1.5rem' }}></i>
-              <h1 className="h5 mb-0 fw-bold text-dark">Gráfica Los Rumbos</h1>
+              <h1 className="h5 mb-0 fw-bold text-dark">Rumbos Gráfica & Copias</h1>
             </div>
 
             {/* Search Icon */}
@@ -442,7 +442,7 @@ const Landing = () => {
         <div className="container">
           <div className="row">
             <div className="col-md-4 mb-4">
-              <h4 className="h5 fw-semibold mb-3">Gráfica Los Rumbos</h4>
+              <h4 className="h5 fw-semibold mb-3">Rumbos Gráfica & Copias</h4>
               <p className="text-secondary">Tu centro de confianza para servicios de impresión y fotocopiado.</p>
             </div>
             <div className="col-md-4 mb-4">
@@ -463,7 +463,7 @@ const Landing = () => {
           <hr className="border-secondary" />
           <div className="container-fluid">
             <div className="d-flex justify-content-between align-items-center">
-              <p className="text-secondary mb-1 small">&copy; 2025 Gráfica Los Rumbos - Panel de Administración</p>
+              <p className="text-secondary mb-1 small">&copy; 2025 Rumbos Gráfica & Copias - Panel de Administración</p>
               <a 
                 href="https://simpleapps.com.ar" 
                 target="_blank" 
