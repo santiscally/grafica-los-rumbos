@@ -153,7 +153,7 @@ const PedidoPersonalizado = () => {
         <div className="container">
           <div className="py-3">
             <div className="d-flex align-items-center gap-3">
-              <Link to="/" className="btn btn-ghost btn-sm d-flex align-items-center gap-2">
+              <Link to="/landing" className="btn btn-ghost btn-sm d-flex align-items-center gap-2">
                 <i className="fas fa-arrow-left"></i>
                 Volver
               </Link>
@@ -372,7 +372,7 @@ const PedidoPersonalizado = () => {
                     <button type="button" className="btn-close ms-3" onClick={() => setMessage(null)}></button>
                   </div>
                 )}
-                <Link to="/" className="btn btn-outline-secondary">
+                <Link to="/landing" className="btn btn-outline-secondary">
                   Cancelar
                 </Link>
                 <button 
