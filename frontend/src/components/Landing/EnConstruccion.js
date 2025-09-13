@@ -255,8 +255,8 @@ const EnConstruccion = () => {
               <div style={styles.contactIcon}>
                 <i className="fas fa-envelope"></i>
               </div>
-              <a href="mailto:info@graficalosrumbos.com" style={styles.contactLink}>
-                info@graficalosrumbos.com
+              <a href="mailto:graficarumbos@gmail.com" style={styles.contactLink}>
+                graficarumbos@gmail.com
               </a>
             </div>
             
@@ -264,8 +264,8 @@ const EnConstruccion = () => {
               <div style={styles.contactIcon}>
                 <i className="fas fa-phone"></i>
               </div>
-              <a href="tel:+541145678901" style={styles.contactLink}>
-                +54 11 4567-8901
+              <a href="tel:+541148334057" style={styles.contactLink}>
+                +54 11 4833 4057
               </a>
             </div>
             
