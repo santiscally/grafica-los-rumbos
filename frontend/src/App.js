@@ -7,13 +7,15 @@ import Admin from './components/Admin/Admin';
 import PedidoPersonalizado from './components/Landing/PedidoPersonalizado';
 import Precios from './components/Landing/Precios';
 import './styles/App.css';
+import EnConstruccion from './components/Landing/EnConstruccion';
 
 function App() {
   return (
     <Router>
       <div className="App">
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<EnConstruccion />} />
+          <Route path="/landing" element={<Landing />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/pedido-personalizado" element={<PedidoPersonalizado />} />
           <Route path="/precios" element={<Precios />} />
