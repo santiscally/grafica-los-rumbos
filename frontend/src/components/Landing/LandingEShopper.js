@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { productService, categoryService } from '../../services/api';
 import CartWidget from './CartWidget';
+import Footer from '../Common/Footer';
 import '../../styles/eshopper.css';
 
 const LandingEShopper = () => {
@@ -10,6 +11,8 @@ const LandingEShopper = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [newProducts, setNewProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategoryData, setSelectedCategoryData] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,16 +21,17 @@ const LandingEShopper = () => {
   const [showCategorySidebar, setShowCategorySidebar] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [viewMode, setViewMode] = useState('home');
 
   useEffect(() => {
     fetchInitialData();
   }, []);
 
   useEffect(() => {
-    if (selectedCategory) {
+    if (viewMode === 'products' && (selectedCategory || selectedSubcategory)) {
       fetchCategoryProducts();
     }
-  }, [selectedCategory, sortBy, priceFilter, page]);
+  }, [selectedCategory, selectedSubcategory, sortBy, priceFilter, page, viewMode]);
 
   const fetchInitialData = async () => {
     try {
@@ -51,11 +55,7 @@ const LandingEShopper = () => {
   const fetchCategoryProducts = async () => {
     try {
       setLoading(true);
-      const params = { 
-        sort: sortBy,
-        page,
-        limit: 9
-      };
+      const params = { sort: sortBy, page, limit: 9 };
       
       if (priceFilter !== 'all') {
         const [min, max] = priceFilter.split('-');
@@ -63,7 +63,8 @@ const LandingEShopper = () => {
         if (max) params.maxPrice = max;
       }
       
-      const data = await categoryService.getCategoryProducts(selectedCategory, params);
+      const categoryId = selectedSubcategory || selectedCategory;
+      const data = await categoryService.getCategoryProducts(categoryId, params);
       setProducts(data.products);
       setTotalPages(data.totalPages);
       setLoading(false);
@@ -80,7 +81,10 @@ const LandingEShopper = () => {
         setLoading(true);
         const data = await productService.getProducts({ search: searchQuery });
         setProducts(data.products);
+        setViewMode('products');
         setSelectedCategory(null);
+        setSelectedCategoryData(null);
+        setSelectedSubcategory(null);
         setLoading(false);
       } catch (error) {
         console.error('Error buscando productos:', error);
@@ -89,9 +93,38 @@ const LandingEShopper = () => {
     }
   };
 
-  const handleCategorySelect = (categoryId) => {
-    setSelectedCategory(categoryId);
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category._id);
+    setSelectedCategoryData(category);
+    setSelectedSubcategory(null);
     setPage(1);
+    setViewMode(category.subcategories?.length > 0 ? 'category' : 'products');
+  };
+
+  const handleSubcategorySelect = (subcategory) => {
+    setSelectedSubcategory(subcategory._id);
+    setPage(1);
+    setViewMode('products');
+  };
+
+  const handleViewAllProducts = () => {
+    setSelectedSubcategory(null);
+    setPage(1);
+    setViewMode('products');
+  };
+
+  const handleBackToHome = () => {
+    setSelectedCategory(null);
+    setSelectedCategoryData(null);
+    setSelectedSubcategory(null);
+    setViewMode('home');
+    setProducts([]);
+  };
+
+  const handleBackToCategory = () => {
+    setSelectedSubcategory(null);
+    setViewMode('category');
+    setProducts([]);
   };
 
   const addToCart = (product) => {
@@ -115,548 +148,271 @@ const LandingEShopper = () => {
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('es-AR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(price);
+    return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(price);
+  };
+
+  const Breadcrumb = () => {
+    if (viewMode === 'home') return null;
+    return (
+      <nav style={{ padding: '1rem 0', marginBottom: '1rem' }}>
+        <ol style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, padding: '0.75rem 1rem', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', listStyle: 'none', flexWrap: 'wrap' }}>
+          <li>
+            <button onClick={handleBackToHome} style={{ background: 'none', border: 'none', color: '#0d6efd', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9375rem' }}>
+              <i className="fas fa-home"></i><span>Inicio</span>
+            </button>
+          </li>
+          {selectedCategoryData && (
+            <>
+              <li style={{ color: '#6c757d' }}><i className="fas fa-chevron-right" style={{ fontSize: '0.75rem' }}></i></li>
+              <li>
+                {viewMode === 'category' ? (
+                  <span style={{ fontWeight: '500', color: '#343a40' }}>{selectedCategoryData.name}</span>
+                ) : (
+                  <button onClick={selectedCategoryData.subcategories?.length > 0 ? handleBackToCategory : handleBackToHome} style={{ background: 'none', border: 'none', color: '#0d6efd', cursor: 'pointer', padding: 0, fontSize: '0.9375rem' }}>{selectedCategoryData.name}</button>
+                )}
+              </li>
+            </>
+          )}
+          {selectedSubcategory && selectedCategoryData?.subcategories && (
+            <>
+              <li style={{ color: '#6c757d' }}><i className="fas fa-chevron-right" style={{ fontSize: '0.75rem' }}></i></li>
+              <li><span style={{ fontWeight: '500', color: '#343a40' }}>{selectedCategoryData.subcategories.find(s => s._id === selectedSubcategory)?.name || 'Productos'}</span></li>
+            </>
+          )}
+          {viewMode === 'products' && !selectedSubcategory && selectedCategoryData && (
+            <>
+              <li style={{ color: '#6c757d' }}><i className="fas fa-chevron-right" style={{ fontSize: '0.75rem' }}></i></li>
+              <li><span style={{ fontWeight: '500', color: '#343a40' }}>Todos los productos</span></li>
+            </>
+          )}
+        </ol>
+      </nav>
+    );
   };
 
   return (
-    <div className="eshopper-container">
-      {/* Topbar */}
-      <div className="container-fluid bg-light">
-        <div className="row py-2 px-xl-5">
-          <div className="col-lg-6 d-none d-lg-block">
-            <div className="d-inline-flex align-items-center">
-              <Link className="text-dark" to="/precios">Lista de Precios</Link>
-              <span className="text-muted px-2">|</span>
-              <Link className="text-dark" to="/pedido-personalizado">Pedido Personalizado</Link>
-            </div>
-          </div>
-          <div className="col-lg-6 text-center text-lg-right">
-            <div className="d-inline-flex align-items-center">
-              <a className="text-dark px-2" href="tel:+541145678901">
-                <i className="fas fa-phone"></i> +54 11 4567-8901
-              </a>
-              <a className="text-dark px-2" href="mailto:info@graficalosrumbos.com">
-                <i className="fas fa-envelope"></i> info@graficalosrumbos.com
-              </a>
-            </div>
-          </div>
-        </div>
-        
-        <div className="row align-items-center py-3 px-xl-5">
-          <div className="col-lg-3 d-none d-lg-block">
-            <a href="/" className="text-decoration-none">
-              <h1 className="m-0 display-5 font-weight-semi-bold">
-                <span className="text-primary font-weight-bold border px-3 mr-1">
-                  <i className="fas fa-print"></i>
-                </span>Gráfica Los Rumbos
-              </h1>
-            </a>
-          </div>
-          <div className="col-lg-6 col-6 text-left">
-            <form onSubmit={handleSearch}>
-              <div className="input-group">
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  placeholder="Buscar productos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <div className="input-group-append">
-                  <button type="submit" className="input-group-text bg-transparent text-primary">
-                    <i className="fa fa-search"></i>
-                  </button>
+    <div style={{ minHeight: '100vh', background: '#f8f9fa' }}>
+      {/* Header fijo */}
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <div style={{ background: '#f8f9fa', borderBottom: '1px solid #dee2e6', padding: '0.5rem 0' }}>
+          <div className="container">
+            <div className="row align-items-center">
+              <div className="col-lg-6 d-none d-lg-block">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <Link to="/precios" style={{ color: '#343a40', textDecoration: 'none', fontSize: '0.875rem' }}><i className="fas fa-list-ul" style={{ marginRight: '6px' }}></i>Lista de Precios</Link>
+                  <span style={{ color: '#6c757d' }}>|</span>
+                  <Link to="/pedido-personalizado" style={{ color: '#343a40', textDecoration: 'none', fontSize: '0.875rem' }}><i className="fas fa-file-alt" style={{ marginRight: '6px' }}></i>Pedido Personalizado</Link>
                 </div>
               </div>
-            </form>
-          </div>
-          <div className="col-lg-3 col-6 text-right">
-            <CartWidget />
+              <div className="col-lg-6 text-center text-lg-end">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem', fontSize: '0.875rem' }}>
+                  <a href="tel:+541145678901" style={{ color: '#343a40', textDecoration: 'none' }}><i className="fas fa-phone" style={{ marginRight: '6px' }}></i>+54 11 4567-8901</a>
+                  <a href="mailto:info@graficalosrumbos.com" style={{ color: '#343a40', textDecoration: 'none' }} className="d-none d-md-inline"><i className="fas fa-envelope" style={{ marginRight: '6px' }}></i>info@graficalosrumbos.com</a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Navbar con Categorías */}
-      <div className="container-fluid mb-5">
-        <div className="row border-top px-xl-5">
-          <div className="col-lg-3 d-none d-lg-block">
-            <a 
-              className="btn shadow-none d-flex align-items-center justify-content-between bg-primary text-white w-100"
-              data-toggle="collapse" 
-              href="#navbar-vertical"
-              onClick={() => setShowCategorySidebar(!showCategorySidebar)}
-              style={{ height: '65px', marginTop: '-1px', padding: '0 30px' }}
-            >
-              <h6 className="m-0">Categorías</h6>
-              <i className="fa fa-angle-down text-dark"></i>
-            </a>
-            <nav 
-              className={`collapse ${showCategorySidebar ? 'show' : ''} navbar navbar-vertical navbar-light align-items-start p-0 border border-top-0 border-bottom-0`}
-              id="navbar-vertical" 
-              style={{ width: 'calc(100% - 30px)', zIndex: 1, position: 'absolute', backgroundColor: 'white' }}
-            >
-              <div className="navbar-nav w-100 overflow-auto" style={{ maxHeight: '410px' }}>
-                {categories.map(category => (
-                  <div key={category._id}>
-                    {category.subcategories && category.subcategories.length > 0 ? (
-                      <div className="nav-item dropdown">
-                        <a 
-                          href="#" 
-                          className="nav-link" 
-                          data-toggle="dropdown"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleCategorySelect(category._id);
-                          }}
-                        >
-                          <i className={`${category.icon} mr-2`}></i>
-                          {category.name}
-                          <i className="fa fa-angle-down float-right mt-1"></i>
-                        </a>
-                        <div className="dropdown-menu position-absolute bg-secondary border-0 rounded-0 w-100 m-0">
-                          {category.subcategories.map(subcat => (
-                            <a 
-                              key={subcat._id}
-                              href="#"
-                              className="dropdown-item"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleCategorySelect(subcat._id);
-                              }}
-                            >
-                              <i className={`${subcat.icon} mr-2`}></i>
-                              {subcat.name}
-                            </a>
-                          ))}
+        <div style={{ padding: '0.75rem 0', borderBottom: '1px solid #dee2e6' }}>
+          <div className="container">
+            <div className="row align-items-center">
+              <div className="col-lg-3 col-6">
+                <Link to="/" onClick={handleBackToHome} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                  <div style={{ width: '44px', height: '44px', background: '#0d6efd', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.25rem' }}><i className="fas fa-print"></i></div>
+                  <span style={{ marginLeft: '0.75rem', fontSize: '1.125rem', fontWeight: 700, color: '#343a40' }}>Gráfica Los Rumbos</span>
+                </Link>
+              </div>
+              <div className="col-lg-6 d-none d-lg-block">
+                <form onSubmit={handleSearch} style={{ position: 'relative', maxWidth: '500px', margin: '0 auto' }}>
+                  <input type="text" placeholder="Buscar productos..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ width: '100%', padding: '0.75rem 3.5rem 0.75rem 1.25rem', border: '2px solid #e5e7eb', borderRadius: '25px', fontSize: '0.9375rem', outline: 'none' }} />
+                  <button type="submit" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '38px', height: '38px', border: 'none', background: '#0d6efd', color: 'white', borderRadius: '50%', cursor: 'pointer' }}><i className="fas fa-search"></i></button>
+                </form>
+              </div>
+              <div className="col-lg-3 col-6 text-end"><CartWidget /></div>
+            </div>
+          </div>
+        </div>
+
+        <nav style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', padding: '0.5rem 0' }}>
+          <div className="container">
+            <div className="row align-items-center">
+              <div className="col-lg-3 d-none d-lg-block position-relative">
+                <button onClick={() => setShowCategorySidebar(!showCategorySidebar)} style={{ width: '100%', padding: '0.75rem 1rem', background: '#0d6efd', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                  <span><i className="fas fa-bars" style={{ marginRight: '10px' }}></i>Categorías</span>
+                  <i className={`fas fa-chevron-${showCategorySidebar ? 'up' : 'down'}`}></i>
+                </button>
+                {showCategorySidebar && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: 'white', borderRadius: '0 0 8px 8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 1000, maxHeight: '400px', overflowY: 'auto', marginTop: '0.5rem' }}>
+                    {categories.map(category => (
+                      <div key={category._id} onClick={() => { handleCategorySelect(category); setShowCategorySidebar(false); }} style={{ padding: '0.875rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                        <i className={category.icon || 'fas fa-folder'} style={{ marginRight: '12px', color: '#0d6efd' }}></i>
+                        <span>{category.name}</span>
+                        {category.subcategories?.length > 0 && <i className="fas fa-chevron-right" style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#6c757d' }}></i>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="col-lg-9">
+                <div className="d-none d-lg-flex" style={{ gap: '0.5rem' }}>
+                  <Link to="/" onClick={handleBackToHome} style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', padding: '0.5rem 1rem', borderRadius: '6px' }}><i className="fas fa-home" style={{ marginRight: '8px' }}></i>Inicio</Link>
+                  <Link to="/precios" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', padding: '0.5rem 1rem', borderRadius: '6px' }}><i className="fas fa-tags" style={{ marginRight: '8px' }}></i>Precios</Link>
+                  <Link to="/pedido-personalizado" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', padding: '0.5rem 1rem', borderRadius: '6px' }}><i className="fas fa-file-alt" style={{ marginRight: '8px' }}></i>Pedido Personalizado</Link>
+                </div>
+                <div className="d-lg-none">
+                  <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+                    <Link to="/" onClick={handleBackToHome} style={{ color: 'white', textDecoration: 'none', textAlign: 'center', padding: '0.5rem' }}><i className="fas fa-home" style={{ display: 'block', marginBottom: '0.25rem' }}></i><small>Inicio</small></Link>
+                    <button onClick={() => setShowCategorySidebar(!showCategorySidebar)} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'center', padding: '0.5rem', cursor: 'pointer' }}><i className="fas fa-th-large" style={{ display: 'block', marginBottom: '0.25rem' }}></i><small>Categorías</small></button>
+                    <Link to="/pedido-personalizado" style={{ color: 'white', textDecoration: 'none', textAlign: 'center', padding: '0.5rem' }}><i className="fas fa-file-alt" style={{ display: 'block', marginBottom: '0.25rem' }}></i><small>Pedido</small></Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </nav>
+      </header>
+
+      {/* Contenido principal */}
+      <main style={{ paddingTop: '180px', paddingBottom: '60px', minHeight: '100vh' }}>
+        <div className="container py-4">
+          <Breadcrumb />
+
+          {viewMode === 'home' && (
+            <>
+              <div className="hero-banner mb-4">
+                <div className="hero-content">
+                  <h1>Servicios de Impresión y Fotocopiado</h1>
+                  <p className="lead">Calidad profesional para todas tus necesidades de impresión</p>
+                  <Link to="/pedido-personalizado" className="btn-hero"><i className="fas fa-paper-plane" style={{ marginRight: '10px' }}></i>Realizar Pedido</Link>
+                </div>
+              </div>
+
+              <section className="mb-5">
+                <h2 className="section-title-simple">Nuestras Categorías</h2>
+                <div className="row g-4">
+                  {categories.map(category => (
+                    <div key={category._id} className="col-lg-4 col-md-6">
+                      <div className="category-card-home" onClick={() => handleCategorySelect(category)}>
+                        <div className="category-icon-home"><i className={`${category.icon || 'fas fa-folder'} fa-2x`}></i></div>
+                        <div className="category-info-home">
+                          <h5>{category.name}</h5>
+                          <p className="text-muted mb-1">{category.description}</p>
+                          <small className="text-primary">{category.productCount || 0} productos{category.subcategories?.length > 0 && ` • ${category.subcategories.length} subcategorías`}</small>
+                        </div>
+                        <i className="fas fa-chevron-right text-muted" style={{ marginLeft: 'auto' }}></i>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {featuredProducts.length > 0 && (
+                <section className="mb-5">
+                  <h2 className="section-title-simple">Productos Destacados</h2>
+                  <div className="row g-4">
+                    {featuredProducts.slice(0, 4).map(product => (
+                      <div key={product._id} className="col-lg-3 col-md-6">
+                        <div className="product-card">
+                          {product.discount > 0 && <span className="product-badge">-{product.discount}%</span>}
+                          <div className="product-image"><img src={product.imageUrl || '/placeholder.jpg'} alt={product.name} /></div>
+                          <div className="product-info">
+                            <h6 className="product-title">{product.name}</h6>
+                            <div className="product-price">
+                              {product.discount > 0 ? (<><span className="price-current">${formatPrice(product.discountedPrice)}</span><span className="price-old">${formatPrice(product.price)}</span></>) : (<span className="price-current">${formatPrice(product.price)}</span>)}
+                            </div>
+                            <button className="btn-add-cart" onClick={() => addToCart(product)}><i className="fas fa-shopping-cart" style={{ marginRight: '8px' }}></i>Agregar</button>
+                          </div>
                         </div>
                       </div>
-                    ) : (
-                      <a 
-                        href="#"
-                        className="nav-item nav-link"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleCategorySelect(category._id);
-                        }}
-                      >
-                        <i className={`${category.icon} mr-2`}></i>
-                        {category.name}
-                      </a>
-                    )}
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+
+          {viewMode === 'category' && selectedCategoryData && (
+            <section>
+              <h2 className="section-title-simple mb-4">{selectedCategoryData.name}</h2>
+              {selectedCategoryData.description && <p className="text-muted mb-4">{selectedCategoryData.description}</p>}
+              <div className="row g-4 mb-4">
+                <div className="col-lg-4 col-md-6">
+                  <div className="subcategory-card" onClick={handleViewAllProducts} style={{ background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)' }}>
+                    <div className="subcategory-icon"><i className="fas fa-th-large fa-3x"></i></div>
+                    <h5>Ver todos los productos</h5>
+                    <p className="text-muted mb-0">{selectedCategoryData.productCount || 0} productos en total</p>
+                  </div>
+                </div>
+                {selectedCategoryData.subcategories?.map(subcategory => (
+                  <div key={subcategory._id} className="col-lg-4 col-md-6">
+                    <div className="subcategory-card" onClick={() => handleSubcategorySelect(subcategory)}>
+                      <div className="subcategory-icon"><i className={`${subcategory.icon || 'fas fa-folder-open'} fa-3x`}></i></div>
+                      <h5>{subcategory.name}</h5>
+                      {subcategory.description && <p className="text-muted mb-0">{subcategory.description}</p>}
+                    </div>
                   </div>
                 ))}
               </div>
-            </nav>
-          </div>
-          
-          <div className="col-lg-9">
-            {/* Carousel o contenido principal */}
-            {!selectedCategory && (
-              <div id="header-carousel" className="carousel slide" data-ride="carousel">
-                <div className="carousel-inner">
-                  <div className="carousel-item active" style={{ height: '410px', background: 'linear-gradient(135deg, #0a4384 0%, #0d6efd 100%)' }}>
-                    <div className="carousel-caption d-flex flex-column align-items-center justify-content-center">
-                      <div className="p-3" style={{ maxWidth: '700px' }}>
-                        <h4 className="text-light text-uppercase font-weight-medium mb-3">
-                          Servicios de Impresión y Fotocopiado
-                        </h4>
-                        <h3 className="display-4 text-white font-weight-semi-bold mb-4">
-                          Calidad Profesional
-                        </h3>
-                        <Link to="/pedido-personalizado" className="btn btn-light py-2 px-3">
-                          Realizar Pedido
-                        </Link>
+            </section>
+          )}
+
+          {viewMode === 'products' && (
+            <div className="row">
+              <div className="col-lg-3 col-md-12 mb-4">
+                <div className="filter-sidebar">
+                  <h4 className="filter-title">Filtros</h4>
+                  <div className="filter-group">
+                    <h5 className="filter-subtitle">Precio</h5>
+                    <div className="filter-options">
+                      {[{ value: 'all', label: 'Todos' }, { value: '0-100', label: '$0 - $100' }, { value: '100-500', label: '$100 - $500' }, { value: '500-', label: '$500+' }].map(option => (
+                        <label key={option.value} className="filter-option"><input type="radio" name="price" checked={priceFilter === option.value} onChange={() => setPriceFilter(option.value)} /><span>{option.label}</span></label>
+                      ))}
+                    </div>
+                  </div>
+                  {selectedCategoryData?.subcategories?.length > 0 && (
+                    <div className="filter-group">
+                      <h5 className="filter-subtitle">Subcategorías</h5>
+                      <div className="filter-options">
+                        <label className="filter-option"><input type="radio" name="subcategory" checked={!selectedSubcategory} onChange={() => { setSelectedSubcategory(null); setPage(1); }} /><span>Todas</span></label>
+                        {selectedCategoryData.subcategories.map(subcat => (<label key={subcat._id} className="filter-option"><input type="radio" name="subcategory" checked={selectedSubcategory === subcat._id} onChange={() => { setSelectedSubcategory(subcat._id); setPage(1); }} /><span>{subcat.name}</span></label>))}
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Categorías destacadas */}
-      {!selectedCategory && (
-        <div className="container-fluid pt-5">
-          <div className="text-center mb-4">
-            <h2 className="section-title px-5"><span className="px-2">Nuestras Categorías</span></h2>
-          </div>
-          <div className="row px-xl-5 pb-3">
-            {categories.slice(0, 6).map(category => (
-              <div key={category._id} className="col-lg-4 col-md-6 pb-1">
-                <div 
-                  className="cat-item d-flex flex-column border mb-4 cursor-pointer"
-                  style={{ padding: '30px', cursor: 'pointer' }}
-                  onClick={() => handleCategorySelect(category._id)}
-                >
-                  <p className="text-right">{category.productCount} Productos</p>
-                  <div className="cat-img position-relative overflow-hidden mb-3 text-center">
-                    <i className={`${category.icon} fa-5x text-primary`}></i>
-                  </div>
-                  <h5 className="font-weight-semi-bold m-0">{category.name}</h5>
-                  <p className="mt-2 text-muted">{category.description}</p>
+              <div className="col-lg-9 col-md-12">
+                <div className="products-header d-flex align-items-center justify-content-between mb-4">
+                  <span className="text-muted">{products.length} producto{products.length !== 1 ? 's' : ''}</span>
+                  <select className="sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}><option value="name">Nombre</option><option value="price">Precio ↑</option><option value="-price">Precio ↓</option><option value="-createdAt">Reciente</option></select>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Productos de categoría seleccionada */}
-      {selectedCategory && (
-        <div className="container-fluid pt-5">
-          <div className="row px-xl-5">
-            {/* Filtros laterales */}
-            <div className="col-lg-3 col-md-12">
-              <div className="border-bottom mb-4 pb-4">
-                <h5 className="font-weight-semi-bold mb-4">Filtrar por precio</h5>
-                <form>
-                  <div className="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
-                    <input 
-                      type="radio" 
-                      className="custom-control-input" 
-                      name="price"
-                      id="price-all"
-                      checked={priceFilter === 'all'}
-                      onChange={() => setPriceFilter('all')}
-                    />
-                    <label className="custom-control-label" htmlFor="price-all">Todos los precios</label>
-                  </div>
-                  <div className="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
-                    <input 
-                      type="radio" 
-                      className="custom-control-input" 
-                      name="price"
-                      id="price-1"
-                      checked={priceFilter === '0-100'}
-                      onChange={() => setPriceFilter('0-100')}
-                    />
-                    <label className="custom-control-label" htmlFor="price-1">$0 - $100</label>
-                  </div>
-                  <div className="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
-                    <input 
-                      type="radio" 
-                      className="custom-control-input" 
-                      name="price"
-                      id="price-2"
-                      checked={priceFilter === '100-500'}
-                      onChange={() => setPriceFilter('100-500')}
-                    />
-                    <label className="custom-control-label" htmlFor="price-2">$100 - $500</label>
-                  </div>
-                  <div className="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
-                    <input 
-                      type="radio" 
-                      className="custom-control-input" 
-                      name="price"
-                      id="price-3"
-                      checked={priceFilter === '500-'}
-                      onChange={() => setPriceFilter('500-')}
-                    />
-                    <label className="custom-control-label" htmlFor="price-3">$500+</label>
-                  </div>
-                </form>
-              </div>
-            </div>
-
-            {/* Lista de productos */}
-            <div className="col-lg-9 col-md-12">
-              <div className="row pb-3">
-                <div className="col-12 pb-1">
-                  <div className="d-flex align-items-center justify-content-between mb-4">
-                    <div>
-                      <button 
-                        className="btn btn-sm btn-light"
-                        onClick={() => setSelectedCategory(null)}
-                      >
-                        <i className="fas fa-arrow-left mr-2"></i>
-                        Volver
-                      </button>
-                    </div>
-                    <div className="dropdown ml-4">
-                      <button 
-                        className="btn border dropdown-toggle" 
-                        type="button" 
-                        id="triggerId" 
-                        data-toggle="dropdown"
-                      >
-                        Ordenar por
-                      </button>
-                      <div className="dropdown-menu dropdown-menu-right">
-                        <a 
-                          className="dropdown-item" 
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); setSortBy('name'); }}
-                        >
-                          Nombre
-                        </a>
-                        <a 
-                          className="dropdown-item" 
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); setSortBy('price'); }}
-                        >
-                          Precio
-                        </a>
-                        <a 
-                          className="dropdown-item" 
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); setSortBy('-createdAt'); }}
-                        >
-                          Más reciente
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {loading ? (
-                  <div className="col-12 text-center py-5">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="sr-only">Cargando...</span>
-                    </div>
-                  </div>
-                ) : products.length === 0 ? (
-                  <div className="col-12 text-center py-5">
-                    <p>No hay productos en esta categoría</p>
-                  </div>
-                ) : (
-                  products.map(product => (
-                    <div key={product._id} className="col-lg-4 col-md-6 col-sm-12 pb-1">
-                      <div className="card product-item border-0 mb-4">
-                        <div className="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
-                          {product.discount > 0 && (
-                            <span className="position-absolute badge badge-danger" style={{ top: '10px', right: '10px' }}>
-                              -{product.discount}%
-                            </span>
-                          )}
-                          <img 
-                            className="img-fluid w-100" 
-                            src={product.imageUrl || '/placeholder.jpg'}
-                            alt={product.name}
-                            style={{ height: '200px', objectFit: 'cover' }}
-                          />
-                        </div>
-                        <div className="card-body border-left border-right text-center p-0 pt-4 pb-3">
-                          <h6 className="text-truncate mb-3">{product.name}</h6>
-                          <div className="d-flex justify-content-center">
-                            {product.discount > 0 ? (
-                              <>
-                                <h6>${formatPrice(product.discountedPrice)}</h6>
-                                <h6 className="text-muted ml-2">
-                                  <del>${formatPrice(product.price)}</del>
-                                </h6>
-                              </>
-                            ) : (
-                              <h6>${formatPrice(product.price)}</h6>
-                            )}
+                {loading ? (<div className="text-center py-5"><div className="spinner-border text-primary"></div></div>) : products.length === 0 ? (<div className="text-center py-5"><i className="fas fa-box-open fa-4x text-muted mb-3"></i><p className="text-muted">No hay productos</p></div>) : (
+                  <>
+                    <div className="row g-4">
+                      {products.map(product => (
+                        <div key={product._id} className="col-lg-4 col-md-6">
+                          <div className="product-card">
+                            {product.discount > 0 && <span className="product-badge">-{product.discount}%</span>}
+                            <div className="product-image"><img src={product.imageUrl || '/placeholder.jpg'} alt={product.name} /></div>
+                            <div className="product-info">
+                              <h6 className="product-title">{product.name}</h6>
+                              <div className="product-price">{product.discount > 0 ? (<><span className="price-current">${formatPrice(product.discountedPrice)}</span><span className="price-old">${formatPrice(product.price)}</span></>) : (<span className="price-current">${formatPrice(product.price)}</span>)}</div>
+                              <button className="btn-add-cart" onClick={() => addToCart(product)}><i className="fas fa-shopping-cart" style={{ marginRight: '8px' }}></i>Agregar</button>
+                            </div>
                           </div>
                         </div>
-                        <div className="card-footer d-flex justify-content-between bg-light border">
-                          <button 
-                            className="btn btn-sm text-dark p-0"
-                            onClick={() => addToCart(product)}
-                          >
-                            <i className="fas fa-shopping-cart text-primary mr-1"></i>
-                            Agregar
-                          </button>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))
-                )}
-
-                {/* Paginación */}
-                {totalPages > 1 && (
-                  <div className="col-12 pb-1">
-                    <nav aria-label="Page navigation">
-                      <ul className="pagination justify-content-center mb-3">
-                        <li className={`page-item ${page === 1 ? 'disabled' : ''}`}>
-                          <a 
-                            className="page-link" 
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              if (page > 1) setPage(page - 1);
-                            }}
-                          >
-                            <span>&laquo;</span>
-                          </a>
-                        </li>
-                        {[...Array(totalPages)].map((_, i) => (
-                          <li key={i} className={`page-item ${page === i + 1 ? 'active' : ''}`}>
-                            <a 
-                              className="page-link" 
-                              href="#"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setPage(i + 1);
-                              }}
-                            >
-                              {i + 1}
-                            </a>
-                          </li>
-                        ))}
-                        <li className={`page-item ${page === totalPages ? 'disabled' : ''}`}>
-                          <a 
-                            className="page-link" 
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              if (page < totalPages) setPage(page + 1);
-                            }}
-                          >
-                            <span>&raquo;</span>
-                          </a>
-                        </li>
-                      </ul>
-                    </nav>
-                  </div>
+                    {totalPages > 1 && (<div className="pagination-wrapper"><button className="pagination-btn" disabled={page === 1} onClick={() => setPage(page - 1)}><i className="fas fa-chevron-left"></i></button>{[...Array(totalPages)].map((_, i) => (<button key={i} className={`pagination-btn ${page === i + 1 ? 'active' : ''}`} onClick={() => setPage(i + 1)}>{i + 1}</button>))}<button className="pagination-btn" disabled={page === totalPages} onClick={() => setPage(page + 1)}><i className="fas fa-chevron-right"></i></button></div>)}
+                  </>
                 )}
               </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </main>
 
-      {/* Productos destacados */}
-      {!selectedCategory && featuredProducts.length > 0 && (
-        <div className="container-fluid pt-5">
-          <div className="text-center mb-4">
-            <h2 className="section-title px-5"><span className="px-2">Productos Destacados</span></h2>
-          </div>
-          <div className="row px-xl-5 pb-3">
-            {featuredProducts.map(product => (
-              <div key={product._id} className="col-lg-3 col-md-6 col-sm-12 pb-1">
-                <div className="card product-item border-0 mb-4">
-                  <div className="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
-                    {product.discount > 0 && (
-                      <span className="position-absolute badge badge-danger" style={{ top: '10px', right: '10px' }}>
-                        -{product.discount}%
-                      </span>
-                    )}
-                    <img 
-                      className="img-fluid w-100" 
-                      src={product.imageUrl || '/placeholder.jpg'}
-                      alt={product.name}
-                      style={{ height: '200px', objectFit: 'cover' }}
-                    />
-                  </div>
-                  <div className="card-body border-left border-right text-center p-0 pt-4 pb-3">
-                    <h6 className="text-truncate mb-3">{product.name}</h6>
-                    <div className="d-flex justify-content-center">
-                      {product.discount > 0 ? (
-                        <>
-                          <h6>${formatPrice(product.discountedPrice)}</h6>
-                          <h6 className="text-muted ml-2">
-                            <del>${formatPrice(product.price)}</del>
-                          </h6>
-                        </>
-                      ) : (
-                        <h6>${formatPrice(product.price)}</h6>
-                      )}
-                    </div>
-                  </div>
-                  <div className="card-footer d-flex justify-content-between bg-light border">
-                    <button 
-                      className="btn btn-sm text-dark p-0"
-                      onClick={() => addToCart(product)}
-                    >
-                      <i className="fas fa-shopping-cart text-primary mr-1"></i>
-                      Agregar al Carrito
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="container-fluid bg-dark text-light mt-5 pt-5">
-        <div className="row px-xl-5 pt-5">
-          <div className="col-lg-4 col-md-12 mb-5 pr-3 pr-xl-5">
-            <a href="/" className="text-decoration-none">
-              <h1 className="mb-4 display-5 font-weight-semi-bold">
-                <span className="text-primary font-weight-bold border border-white px-3 mr-1">
-                  <i className="fas fa-print"></i>
-                </span>
-                <span className="text-white">Gráfica Los Rumbos</span>
-              </h1>
-            </a>
-            <p>Tu centro de confianza para servicios de impresión y fotocopiado.</p>
-            <p className="mb-2"><i className="fa fa-map-marker-alt text-primary mr-3"></i>Buenos Aires, Argentina</p>
-            <p className="mb-2"><i className="fa fa-envelope text-primary mr-3"></i>info@graficalosrumbos.com</p>
-            <p className="mb-0"><i className="fa fa-phone-alt text-primary mr-3"></i>+54 11 4567-8901</p>
-          </div>
-          <div className="col-lg-8 col-md-12">
-            <div className="row">
-              <div className="col-md-4 mb-5">
-                <h5 className="font-weight-bold text-white mb-4">Enlaces Rápidos</h5>
-                <div className="d-flex flex-column justify-content-start">
-                  <Link className="text-light mb-2" to="/"><i className="fa fa-angle-right mr-2"></i>Inicio</Link>
-                  <Link className="text-light mb-2" to="/precios"><i className="fa fa-angle-right mr-2"></i>Lista de Precios</Link>
-                  <Link className="text-light mb-2" to="/pedido-personalizado"><i className="fa fa-angle-right mr-2"></i>Pedido Personalizado</Link>
-                </div>
-              </div>
-              <div className="col-md-4 mb-5">
-                <h5 className="font-weight-bold text-white mb-4">Categorías</h5>
-                <div className="d-flex flex-column justify-content-start">
-                  {categories.slice(0, 5).map(category => (
-                    <a 
-                      key={category._id}
-                      className="text-light mb-2" 
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleCategorySelect(category._id);
-                        window.scrollTo(0, 0);
-                      }}
-                    >
-                      <i className="fa fa-angle-right mr-2"></i>{category.name}
-                    </a>
-                  ))}
-                </div>
-              </div>
-              <div className="col-md-4 mb-5">
-                <h5 className="font-weight-bold text-white mb-4">Horarios</h5>
-                <p className="text-light mb-2">Lunes a Viernes: 9:00 - 19:00</p>
-                <p className="text-light">Sábados: 9:00 - 14:00</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="row border-top border-secondary mx-xl-5 py-4">
-          <div className="col-md-6 px-xl-0">
-            <p className="mb-md-0 text-center text-md-left text-light">
-              &copy; 2025 <span className="text-primary font-weight-semi-bold">Gráfica Los Rumbos</span>. 
-              Todos los derechos reservados.
-            </p>
-          </div>
-          <div className="col-md-6 px-xl-0 text-center text-md-right">
-            <a 
-              href="https://simpleapps.com.ar" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-decoration-none text-light"
-            >
-              Powered by <span className="text-primary">Simple Apps</span>
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Back to Top */}
-      <a href="#" className="btn btn-primary back-to-top" onClick={(e) => {
-        e.preventDefault();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }}>
-        <i className="fa fa-angle-double-up"></i>
-      </a>
+      <Footer />
     </div>
   );
 };
