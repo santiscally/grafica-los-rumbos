@@ -1,0 +1,68 @@
+version: '3.8'
+
+# PRODUCCIÓN - Con SSL
+# Server: vps-1359379-x.dattaweb.com
+# Domain: graficarumbos.com.ar
+
+services:
+  grafica-web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: always
+    volumes:
+      - ./frontend/assets:/usr/share/nginx/html/assets
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro  # Sobrescribe el nginx.conf
+      - ./ssl:/etc/nginx/ssl:ro  # Certificados SSL
+    networks:
+      - grafica-network
+
+  grafica-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - MONGODB_URI=mongodb://grafica-db:27017/fotocopias
+      - JWT_SECRET=${JWT_SECRET:-supersecretkey}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@admin.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-password123}
+    volumes:
+      - ./uploads/pedidos:/app/pedidos
+      - ./uploads/productos:/app/productos
+    networks:
+      - grafica-network
+    depends_on:
+      - grafica-db
+
+  grafica-db:
+    image: mongo:6.0
+    restart: always
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - grafica-network
+
+  grafica-db-admin:
+    image: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: grafica-db
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: pass
+    networks:
+      - grafica-network
+    depends_on:
+      - grafica-db
+
+networks:
+  grafica-network:
+    driver: bridge
+
+volumes:
+  mongo-data:

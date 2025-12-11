@@ -3,7 +3,7 @@ const Category = require('../models/category.model');
 const Product = require('../models/product.model');
 
 const categoryController = {
-  // Obtener todas las categorías con sus subcategorías
+  // Obtener todas las categorias con sus subcategorias
   async getCategories(req, res) {
     try {
       const { includeSubcategories = true, onlyActive = false } = req.query;
@@ -11,14 +11,13 @@ const categoryController = {
       const query = onlyActive ? { isActive: true } : {};
       
       if (includeSubcategories === 'false') {
-        query.parentCategory = null; // Solo categorías principales
+        query.parentCategory = null;
       }
       
       const categories = await Category.find(query)
         .populate('subcategories')
         .sort({ level: 1, order: 1, name: 1 });
       
-      // Organizar categorías con sus subcategorías
       const organizedCategories = categories
         .filter(cat => cat.level === 1)
         .map(cat => ({
@@ -31,40 +30,39 @@ const categoryController = {
       
       res.json(organizedCategories);
     } catch (error) {
-      res.status(500).json({ message: 'Error al obtener categorías', error: error.message });
+      res.status(500).json({ message: 'Error al obtener categorias', error: error.message });
     }
   },
 
-  // Obtener categoría por ID
+  // Obtener categoria por ID
   async getCategoryById(req, res) {
     try {
       const category = await Category.findById(req.params.id)
         .populate('subcategories');
       
       if (!category) {
-        return res.status(404).json({ message: 'Categoría no encontrada' });
+        return res.status(404).json({ message: 'Categoria no encontrada' });
       }
       
       res.json(category);
     } catch (error) {
-      res.status(500).json({ message: 'Error al obtener categoría', error: error.message });
+      res.status(500).json({ message: 'Error al obtener categoria', error: error.message });
     }
   },
 
-  // Crear nueva categoría
+  // Crear nueva categoria
   async createCategory(req, res) {
     try {
       const { name, description, icon, parentCategory, order } = req.body;
       
-      // Validar si es subcategoría
       let level = 1;
       if (parentCategory) {
         const parent = await Category.findById(parentCategory);
         if (!parent) {
-          return res.status(400).json({ message: 'Categoría padre no encontrada' });
+          return res.status(400).json({ message: 'Categoria padre no encontrada' });
         }
         if (parent.level !== 1) {
-          return res.status(400).json({ message: 'Solo se permiten dos niveles de categorías' });
+          return res.status(400).json({ message: 'Solo se permiten dos niveles de categorias' });
         }
         level = 2;
       }
@@ -82,13 +80,13 @@ const categoryController = {
       res.status(201).json(category);
     } catch (error) {
       if (error.code === 11000) {
-        return res.status(400).json({ message: 'Ya existe una categoría con ese nombre' });
+        return res.status(400).json({ message: 'Ya existe una categoria con ese nombre' });
       }
-      res.status(400).json({ message: 'Error al crear categoría', error: error.message });
+      res.status(400).json({ message: 'Error al crear categoria', error: error.message });
     }
   },
 
-  // Actualizar categoría
+  // Actualizar categoria
   async updateCategory(req, res) {
     try {
       const { name, description, icon, parentCategory, order, isActive } = req.body;
@@ -96,18 +94,17 @@ const categoryController = {
       const category = await Category.findById(req.params.id);
       
       if (!category) {
-        return res.status(404).json({ message: 'Categoría no encontrada' });
+        return res.status(404).json({ message: 'Categoria no encontrada' });
       }
       
-      // Si se está cambiando el parentCategory, validar
       if (parentCategory !== undefined && parentCategory !== category.parentCategory) {
         if (parentCategory) {
           const parent = await Category.findById(parentCategory);
           if (!parent) {
-            return res.status(400).json({ message: 'Categoría padre no encontrada' });
+            return res.status(400).json({ message: 'Categoria padre no encontrada' });
           }
           if (parent.level !== 1) {
-            return res.status(400).json({ message: 'Solo se permiten dos niveles de categorías' });
+            return res.status(400).json({ message: 'Solo se permiten dos niveles de categorias' });
           }
           category.level = 2;
         } else {
@@ -126,22 +123,21 @@ const categoryController = {
       res.json(category);
     } catch (error) {
       if (error.code === 11000) {
-        return res.status(400).json({ message: 'Ya existe una categoría con ese nombre' });
+        return res.status(400).json({ message: 'Ya existe una categoria con ese nombre' });
       }
-      res.status(400).json({ message: 'Error al actualizar categoría', error: error.message });
+      res.status(400).json({ message: 'Error al actualizar categoria', error: error.message });
     }
   },
 
-  // Eliminar categoría
+  // Eliminar categoria
   async deleteCategory(req, res) {
     try {
       const category = await Category.findById(req.params.id);
       
       if (!category) {
-        return res.status(404).json({ message: 'Categoría no encontrada' });
+        return res.status(404).json({ message: 'Categoria no encontrada' });
       }
       
-      // Verificar si tiene productos
       const hasProducts = await Product.exists({ 
         $or: [
           { category: category._id },
@@ -151,40 +147,49 @@ const categoryController = {
       
       if (hasProducts) {
         return res.status(400).json({ 
-          message: 'No se puede eliminar una categoría que tiene productos asociados' 
+          message: 'No se puede eliminar una categoria que tiene productos asociados' 
         });
       }
       
-      // Verificar si tiene subcategorías
       const hasSubcategories = await Category.exists({ parentCategory: category._id });
       if (hasSubcategories) {
         return res.status(400).json({ 
-          message: 'No se puede eliminar una categoría que tiene subcategorías' 
+          message: 'No se puede eliminar una categoria que tiene subcategorias' 
         });
       }
       
       await category.deleteOne();
-      res.json({ message: 'Categoría eliminada exitosamente' });
+      res.json({ message: 'Categoria eliminada exitosamente' });
     } catch (error) {
-      res.status(500).json({ message: 'Error al eliminar categoría', error: error.message });
+      res.status(500).json({ message: 'Error al eliminar categoria', error: error.message });
     }
   },
 
-  // Obtener productos de una categoría
+  // Obtener productos de una categoria CON FILTRO DE PRECIO
   async getCategoryProducts(req, res) {
     try {
       const categoryId = req.params.id;
-      const { page = 1, limit = 12, sort = 'name' } = req.query;
+      const { page = 1, limit = 12, sort = 'name', minPrice, maxPrice } = req.query;
       
       const category = await Category.findById(categoryId);
       if (!category) {
-        return res.status(404).json({ message: 'Categoría no encontrada' });
+        return res.status(404).json({ message: 'Categoria no encontrada' });
       }
       
-      // Buscar productos en esta categoría o subcategoría
       const query = category.level === 1 
         ? { category: categoryId }
         : { subcategory: categoryId };
+      
+      // FILTRO DE PRECIO
+      if (minPrice || maxPrice) {
+        query.price = {};
+        if (minPrice) {
+          query.price.$gte = parseFloat(minPrice);
+        }
+        if (maxPrice) {
+          query.price.$lte = parseFloat(maxPrice);
+        }
+      }
       
       const products = await Product.find(query)
         .populate('category subcategory')
@@ -206,14 +211,13 @@ const categoryController = {
     }
   },
 
-  // Obtener lista de iconos disponibles (Font Awesome)
+  // Obtener lista de iconos disponibles
   getAvailableIcons(req, res) {
     const icons = [
-      // Educación y escuela
-      { value: 'fas fa-graduation-cap', label: 'Graduación', category: 'education' },
+      { value: 'fas fa-graduation-cap', label: 'Graduacion', category: 'education' },
       { value: 'fas fa-book', label: 'Libro', category: 'education' },
       { value: 'fas fa-book-open', label: 'Libro Abierto', category: 'education' },
-      { value: 'fas fa-pencil-alt', label: 'Lápiz', category: 'education' },
+      { value: 'fas fa-pencil-alt', label: 'Lapiz', category: 'education' },
       { value: 'fas fa-pen', label: 'Lapicera', category: 'education' },
       { value: 'fas fa-ruler', label: 'Regla', category: 'education' },
       { value: 'fas fa-calculator', label: 'Calculadora', category: 'education' },
@@ -221,8 +225,6 @@ const categoryController = {
       { value: 'fas fa-school', label: 'Escuela', category: 'education' },
       { value: 'fas fa-university', label: 'Universidad', category: 'education' },
       { value: 'fas fa-backpack', label: 'Mochila', category: 'education' },
-      
-      // Oficina y papelería
       { value: 'fas fa-paperclip', label: 'Clip', category: 'office' },
       { value: 'fas fa-stapler', label: 'Abrochadora', category: 'office' },
       { value: 'fas fa-scissors', label: 'Tijeras', category: 'office' },
@@ -234,20 +236,14 @@ const categoryController = {
       { value: 'fas fa-folder-open', label: 'Carpeta Abierta', category: 'office' },
       { value: 'fas fa-file-alt', label: 'Documento', category: 'office' },
       { value: 'fas fa-sticky-note', label: 'Nota Adhesiva', category: 'office' },
-      
-      // Arte y creatividad
       { value: 'fas fa-palette', label: 'Paleta de Colores', category: 'art' },
       { value: 'fas fa-paint-brush', label: 'Pincel', category: 'art' },
-      { value: 'fas fa-pencil-ruler', label: 'Lápiz y Regla', category: 'art' },
-      { value: 'fas fa-drafting-compass', label: 'Compás', category: 'art' },
-      
-      // Tecnología
+      { value: 'fas fa-pencil-ruler', label: 'Lapiz y Regla', category: 'art' },
+      { value: 'fas fa-drafting-compass', label: 'Compas', category: 'art' },
       { value: 'fas fa-laptop', label: 'Laptop', category: 'tech' },
       { value: 'fas fa-desktop', label: 'Computadora', category: 'tech' },
       { value: 'fas fa-print', label: 'Impresora', category: 'tech' },
       { value: 'fas fa-copy', label: 'Copiar', category: 'tech' },
-      
-      // General
       { value: 'fas fa-star', label: 'Estrella', category: 'general' },
       { value: 'fas fa-tag', label: 'Etiqueta', category: 'general' },
       { value: 'fas fa-shopping-bag', label: 'Bolsa', category: 'general' },

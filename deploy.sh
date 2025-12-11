@@ -1,139 +1,140 @@
 #!/bin/bash
 
-echo "🧹 LIMPIEZA FORZADA - Eliminando todo lo relacionado..."
+# ===========================================
+# SCRIPT DE DEPLOYMENT CON DOCKER-COMPOSE
+# ===========================================
+# Uso: ./deploy.sh [prod|homo]
 
-# Parar todos los contenedores relacionados (forzado)
-echo "⏹️  Deteniendo contenedores..."
-docker stop $(docker ps -aq --filter "name=grafica-") 2>/dev/null || true
+set -e
 
-# Eliminar todos los contenedores relacionados (forzado)
-echo "🗑️  Eliminando contenedores..."
-docker rm -f grafica-web grafica-api grafica-db grafica-db-admin 2>/dev/null || true
+# Colores
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
 
-# Eliminar red (forzado)
-echo "🔗 Eliminando red..."
-docker network rm grafica-network 2>/dev/null || true
+log_info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
+log_success() { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_error() { echo -e "${RED}❌ $1${NC}"; }
 
-# Eliminar imágenes locales para rebuild limpio
-echo "🖼️  Eliminando imágenes locales..."
-docker rmi -f grafica-web grafica-api 2>/dev/null || true
+# Determinar ambiente
+ENV=$1
 
-# Limpieza adicional (opcional pero recomendada)
-echo "🧽 Limpieza profunda del sistema Docker..."
-docker system prune -f --volumes 2>/dev/null || true
+if [ -z "$ENV" ]; then
+    echo ""
+    echo "========================================="
+    echo "  SELECCIONAR AMBIENTE DE DEPLOYMENT"
+    echo "========================================="
+    echo ""
+    echo "  1) local - Desarrollo local"
+    echo "            URL: http://localhost"
+    echo ""
+    echo "  2) homo  - Homologación (sin SSL)"
+    echo "            Server: vps-4920631-x.dattaweb.com"
+    echo ""
+    echo "  3) prod  - Producción (con SSL)"
+    echo "            Server: vps-1359379-x.dattaweb.com"
+    echo "            Domain: graficarumbos.com.ar"
+    echo ""
+    read -p "Selecciona ambiente [local/homo/prod]: " ENV
+fi
 
-echo "✅ Limpieza completada - Sistema Docker limpio"
+# Validar ambiente
+if [[ "$ENV" != "prod" && "$ENV" != "homo" && "$ENV" != "local" ]]; then
+    log_error "Ambiente inválido: $ENV"
+    echo "Uso: ./deploy.sh [local|homo|prod]"
+    exit 1
+fi
+
+# Local usa la misma config que homo
+COMPOSE_ENV=$ENV
+if [ "$ENV" == "local" ]; then
+    COMPOSE_ENV="homo"
+fi
+
+echo ""
+echo "========================================="
+echo "  DEPLOYMENT: ${ENV^^}"
+echo "========================================="
 echo ""
 
-# Crear estructura de directorios necesaria
-echo "📁 Creando directorios necesarios..."
-mkdir -p ssl uploads/pedidos uploads/productos
+# Verificar archivos necesarios
+if [ ! -f "frontend/nginx.${COMPOSE_ENV}.conf" ]; then
+    log_error "No se encontró frontend/nginx.${COMPOSE_ENV}.conf"
+    exit 1
+fi
 
-# Verificar certificados SSL
-if [ ! -f "ssl/graficarumbos.crt" ] || [ ! -f "ssl/graficarumbos.key" ]; then
-    echo "⚠️  ADVERTENCIA: Certificados SSL no encontrados en ./ssl/"
-    echo "   Asegúrate de tener:"
-    echo "   - ssl/graficarumbos.crt"
-    echo "   - ssl/graficarumbos.key"
-    echo ""
-    read -p "¿Continuar sin SSL? (y/N): " continue_without_ssl
-    if [[ ! $continue_without_ssl =~ ^[Yy]$ ]]; then
-        echo "❌ Deployment cancelado. Configura los certificados SSL primero."
+if [ ! -f "docker-compose.${COMPOSE_ENV}.yml" ]; then
+    log_error "No se encontró docker-compose.${COMPOSE_ENV}.yml"
+    exit 1
+fi
+
+# Para producción, verificar certificados SSL
+if [ "$COMPOSE_ENV" == "prod" ]; then
+    log_info "Verificando certificados SSL..."
+    mkdir -p ssl
+    
+    if [ ! -f "ssl/graficarumbos.crt" ] || [ ! -f "ssl/graficarumbos.key" ]; then
+        log_error "Certificados SSL no encontrados en ./ssl/"
+        echo "   Necesitas:"
+        echo "   - ssl/graficarumbos.crt"
+        echo "   - ssl/graficarumbos.key"
+        echo ""
         exit 1
     fi
+    log_success "Certificados SSL encontrados"
 fi
 
-echo "🚀 INICIANDO DEPLOYMENT LIMPIO..."
+# Crear directorios necesarios
+log_info "Creando directorios necesarios..."
+mkdir -p ssl uploads/pedidos uploads/productos
+
+# Copiar nginx config correcto
+log_info "Configurando nginx para ambiente: ${ENV}"
+cp "frontend/nginx.${COMPOSE_ENV}.conf" frontend/nginx.conf
+log_success "frontend/nginx.conf configurado para ${ENV}"
+
+# Detener contenedores existentes
+log_info "Deteniendo contenedores existentes..."
+docker-compose -f "docker-compose.${COMPOSE_ENV}.yml" down 2>/dev/null || true
+
+# Limpiar imágenes anteriores (opcional, para rebuild limpio)
+log_info "Limpiando imágenes anteriores..."
+docker rmi -f $(docker images -q 'fotocopias-app*' 2>/dev/null) 2>/dev/null || true
+
+# Construir y levantar
+log_info "Construyendo e iniciando servicios..."
+docker-compose -f "docker-compose.${COMPOSE_ENV}.yml" up -d --build
+
+# Esperar un momento
+sleep 3
+
+# Mostrar estado
+echo ""
+echo "========================================="
+echo "  🎉 DEPLOYMENT COMPLETADO - ${ENV^^}"
+echo "========================================="
 echo ""
 
-# Crear la red
-echo "🔗 Creando red..."
-docker network create grafica-network
+log_info "Estado de los servicios:"
+docker-compose -f "docker-compose.${COMPOSE_ENV}.yml" ps
 
-# Iniciar MongoDB
-echo "📊 Iniciando MongoDB..."
-docker run -d --name grafica-db \
-  --network grafica-network \
-  -v mongo-data:/data/db \
-  --restart always \
-  mongo:6.0
-
-# Esperar a que MongoDB esté listo
-echo "⏳ Esperando que MongoDB esté listo..."
-sleep 5
-
-# Iniciar MongoDB Express
-echo "🔧 Iniciando MongoDB Express..."
-docker run -d --name grafica-db-admin \
-  --network grafica-network \
-  -p 8081:8081 \
-  -e ME_CONFIG_MONGODB_SERVER=grafica-db \
-  -e ME_CONFIG_BASICAUTH_USERNAME=admin \
-  -e ME_CONFIG_BASICAUTH_PASSWORD=pass \
-  --restart always \
-  mongo-express
-
-# Construir e iniciar Backend
-echo "🔗 Construyendo e iniciando Backend..."
-docker build --no-cache -t grafica-api ./backend
-docker run -d --name grafica-api \
-  --network grafica-network \
-  -e MONGODB_URI=mongodb://grafica-db:27017/fotocopias \
-  -e JWT_SECRET=supersecretkey \
-  -e ADMIN_EMAIL=admin@admin.com \
-  -e ADMIN_PASSWORD=password123 \
-  -v "$(pwd)/uploads/pedidos:/app/pedidos" \
-  -v "$(pwd)/uploads/productos:/app/productos" \
-  --restart always \
-  grafica-api
-
-# Construir e iniciar Frontend con SSL
-echo "🌐 Construyendo e iniciando Frontend..."
-docker build --no-cache -t grafica-web ./frontend
-
-# Verificar si tenemos certificados SSL para decidir puertos
-if [ -f "ssl/graficarumbos.crt" ] && [ -f "ssl/graficarumbos.key" ]; then
-    echo "✅ Certificados SSL encontrados - Iniciando con HTTPS..."
-    docker run -d --name grafica-web \
-      --network grafica-network \
-      -p 80:80 \
-      -p 443:443 \
-      -v "$(pwd)/frontend/assets:/usr/share/nginx/html/assets" \
-      -v "$(pwd)/ssl:/etc/nginx/ssl" \
-      --restart always \
-      grafica-web
-    echo "🔐 SSL habilitado"
+echo ""
+log_info "URLs disponibles:"
+if [ "$ENV" == "prod" ]; then
+    echo "   - HTTP:  http://graficarumbos.com.ar"
+    echo "   - HTTPS: https://graficarumbos.com.ar"
+    echo "   - Server: http://vps-1359379-x.dattaweb.com"
+elif [ "$ENV" == "homo" ]; then
+    echo "   - HTTP: http://vps-4920631-x.dattaweb.com"
+    echo "   - Localhost: http://localhost"
 else
-    echo "⚠️  Iniciando sin SSL (solo HTTP)..."
-    docker run -d --name grafica-web \
-      --network grafica-network \
-      -p 80:80 \
-      -v "$(pwd)/frontend/assets:/usr/share/nginx/html/assets" \
-      --restart always \
-      grafica-web
+    echo "   - HTTP: http://localhost"
 fi
+echo "   - MongoDB Admin: http://localhost:8081"
 
 echo ""
-echo "🎉 DEPLOYMENT COMPLETADO"
-echo "================================"
-echo "📊 Estado de los servicios:"
-docker ps --filter "network=grafica-network" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-
-echo ""
-echo "🌐 URLs disponibles:"
-echo "   - Web: http://graficarumbos.com.ar"
-if [ -f "ssl/graficarumbos.crt" ]; then
-    echo "   - Web SSL: https://graficarumbos.com.ar"
-fi
-echo "   - MongoDB Admin: http://$(curl -s ifconfig.me):8081"
-
-echo ""
-echo "📋 Logs útiles:"
-echo "   docker logs grafica-web"
-echo "   docker logs grafica-api" 
-echo "   docker logs grafica-db"
-
-# Mostrar logs recientes del web para debug
-echo ""
-echo "📄 Logs recientes del frontend:"
-docker logs --tail 10 grafica-web
+log_info "Logs del frontend:"
+docker-compose -f "docker-compose.${COMPOSE_ENV}.yml" logs --tail 20 grafica-web

@@ -1,17 +1,19 @@
 version: '3.8'
 
+# HOMOLOGACIÓN - Sin SSL
+# Server: vps-4920631-x.dattaweb.com
+
 services:
   grafica-web:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-    - "80:80"
-    - "443:443"  # Puerto HTTPS agregado
+      - "80:80"
     restart: always
     volumes:
       - ./frontend/assets:/usr/share/nginx/html/assets
-      - ./ssl:/etc/nginx/ssl  # Volumen para certificados SSL
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro  # Sobrescribe el nginx.conf
     networks:
       - grafica-network
 
@@ -26,7 +28,6 @@ services:
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@admin.com}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-password123}
     volumes:
-      # Volúmenes para persistir archivos fuera del container
       - ./uploads/pedidos:/app/pedidos
       - ./uploads/productos:/app/productos
     networks:
