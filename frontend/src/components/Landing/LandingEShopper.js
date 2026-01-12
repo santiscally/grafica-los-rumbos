@@ -315,10 +315,11 @@ const LandingEShopper = () => {
             <div className="header-main-content">
               {/* Logo - IZQUIERDA */}
               <Link to="/" onClick={handleBackToHome} className="header-logo">
-                <div className="logo-icon">
-                  <i className="fas fa-print"></i>
-                </div>
-                <span className="logo-text">Grafica Los Rumbos</span>
+                <img 
+                  src="/logo.jpeg" 
+                  alt="Rumbos Gráfica & Copias" 
+                  className="logo-image"
+                />
               </Link>
 
               {/* Buscador Desktop */}
