@@ -24,6 +24,22 @@ const initializeDirectories = async () => {
   console.log('Directorios de almacenamiento inicializados');
 };
 
+// Tipos MIME de imagen válidos
+const IMAGE_MIMETYPES = [
+  'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+  'image/bmp', 'image/svg+xml', 'image/tiff', 'image/x-tiff',
+  'image/avif', 'image/heic', 'image/heif', 'image/x-icon',
+  'image/vnd.microsoft.icon', 'image/jfif', 'image/pjpeg'
+];
+
+const imageFileFilter = (req, file, cb) => {
+  if (IMAGE_MIMETYPES.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Formato de imagen no válido. Use JPG, PNG, GIF, WebP, BMP, SVG, TIFF o AVIF.'), false);
+  }
+};
+
 // Configuración de multer para pedidos
 const pedidoStorage = multer.diskStorage({
   destination: async (req, file, cb) => {
@@ -52,14 +68,15 @@ const productoStorage = multer.diskStorage({
 });
 
 // Middleware de upload
-const uploadPedido = multer({ 
+const uploadPedido = multer({
   storage: pedidoStorage,
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
 
-const uploadProducto = multer({ 
+const uploadProducto = multer({
   storage: productoStorage,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+  fileFilter: imageFileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
 
 // Mover archivos temporales a su ubicación final
@@ -122,7 +139,7 @@ const getProductoImage = async (productoId) => {
   
   try {
     const files = await fs.readdir(productoDir);
-    const imageFile = files.find(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
+    const imageFile = files.find(file => /\.(jpg|jpeg|jfif|png|gif|webp|bmp|svg|tiff|tif|avif|heic|heif|ico)$/i.test(file));
     
     if (!imageFile) {
       throw new Error('Imagen no encontrada');

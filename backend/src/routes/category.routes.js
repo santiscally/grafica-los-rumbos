@@ -7,6 +7,7 @@ const authMiddleware = require('../middleware/auth.middleware');
 // Rutas públicas
 router.get('/', categoryController.getCategories);
 router.get('/icons', categoryController.getAvailableIcons);
+router.get('/slug/:slug', categoryController.getCategoryBySlug); // debe ir antes de /:id
 router.get('/:id', categoryController.getCategoryById);
 router.get('/:id/products', categoryController.getCategoryProducts);
 

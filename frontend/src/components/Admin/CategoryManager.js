@@ -12,7 +12,8 @@ const CategoryManager = () => {
     description: '',
     icon: 'fas fa-folder',
     parentCategory: '',
-    order: 0
+    order: 0,
+    hidden: false
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,7 +28,7 @@ const CategoryManager = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const data = await categoryService.getCategories();
+      const data = await categoryService.getCategories({ includeHidden: 'true' });
       setCategories(data);
       setError(null);
     } catch (err) {
@@ -48,10 +49,10 @@ const CategoryManager = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -93,7 +94,8 @@ const CategoryManager = () => {
       description: category.description,
       icon: category.icon,
       parentCategory: category.parentCategory || '',
-      order: category.order
+      order: category.order,
+      hidden: category.hidden || false
     });
     setShowForm(true);
     setError(null);
@@ -122,7 +124,8 @@ const CategoryManager = () => {
       description: '',
       icon: 'fas fa-folder',
       parentCategory: '',
-      order: 0
+      order: 0,
+      hidden: false
     });
     setEditingCategory(null);
     setError(null);
@@ -302,6 +305,25 @@ const CategoryManager = () => {
                   </div>
                   
                   <div className="mb-3">
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="hidden"
+                        name="hidden"
+                        checked={formData.hidden}
+                        onChange={handleInputChange}
+                      />
+                      <label className="form-check-label" htmlFor="hidden">
+                        <strong>Categoría oculta</strong>
+                        <small className="text-muted d-block">
+                          No aparece en la tienda pública. Se accede por un link privado: <code>/catalogo/[slug]</code>
+                        </small>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
                     <label className="form-label">Vista Previa del Icono:</label>
                     <div className="d-flex align-items-center gap-3">
                       <div className="text-center p-3 border rounded">
@@ -344,7 +366,7 @@ const CategoryManager = () => {
                     <th>Descripción</th>
                     <th>Nivel</th>
                     <th>Productos</th>
-                    <th>Orden</th>
+                    <th>Visibilidad</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -382,17 +404,36 @@ const CategoryManager = () => {
                           <td className="align-middle text-center">
                             <span className="badge bg-info">{category.productCount || 0}</span>
                           </td>
-                          <td className="align-middle text-center">{category.order}</td>
+                          <td className="align-middle">
+                            {category.hidden ? (
+                              <div>
+                                <span className="badge bg-warning text-dark mb-1">
+                                  <i className="fas fa-eye-slash me-1"></i>Oculta
+                                </span>
+                                {category.slug && (
+                                  <div>
+                                    <small className="text-muted">
+                                      <code>/catalogo/{category.slug}</code>
+                                    </small>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="badge bg-success">
+                                <i className="fas fa-eye me-1"></i>Pública
+                              </span>
+                            )}
+                          </td>
                           <td className="align-middle">
                             <div className="btn-group" role="group">
-                              <button 
+                              <button
                                 className="btn btn-sm btn-outline-primary"
                                 onClick={() => handleEdit(category)}
                                 title="Editar"
                               >
                                 <i className="fas fa-edit"></i>
                               </button>
-                              <button 
+                              <button
                                 className="btn btn-sm btn-outline-danger"
                                 onClick={() => handleDelete(category._id)}
                                 title="Eliminar"
@@ -402,7 +443,7 @@ const CategoryManager = () => {
                             </div>
                           </td>
                         </tr>
-                        {expandedCategories.includes(category._id) && category.subcategories && 
+                        {expandedCategories.includes(category._id) && category.subcategories &&
                           category.subcategories.map(subcat => (
                             <tr key={subcat._id} className="table-secondary">
                               <td className="align-middle text-center ps-5">
@@ -418,17 +459,36 @@ const CategoryManager = () => {
                               <td className="align-middle text-center">
                                 <span className="badge bg-info">{subcat.productCount || 0}</span>
                               </td>
-                              <td className="align-middle text-center">{subcat.order}</td>
+                              <td className="align-middle">
+                                {subcat.hidden ? (
+                                  <div>
+                                    <span className="badge bg-warning text-dark mb-1">
+                                      <i className="fas fa-eye-slash me-1"></i>Oculta
+                                    </span>
+                                    {subcat.slug && (
+                                      <div>
+                                        <small className="text-muted">
+                                          <code>/catalogo/{subcat.slug}</code>
+                                        </small>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="badge bg-success">
+                                    <i className="fas fa-eye me-1"></i>Pública
+                                  </span>
+                                )}
+                              </td>
                               <td className="align-middle">
                                 <div className="btn-group" role="group">
-                                  <button 
+                                  <button
                                     className="btn btn-sm btn-outline-primary"
                                     onClick={() => handleEdit(subcat)}
                                     title="Editar"
                                   >
                                     <i className="fas fa-edit"></i>
                                   </button>
-                                  <button 
+                                  <button
                                     className="btn btn-sm btn-outline-danger"
                                     onClick={() => handleDelete(subcat._id)}
                                     title="Eliminar"

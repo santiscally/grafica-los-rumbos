@@ -19,4 +19,4 @@ RUN mkdir -p /app/pedidos /app/productos && \
 EXPOSE 5000
 
 # Comando de inicio
-CMD ["npm", "run", "dev"]
+CMD ["npm", "start"]

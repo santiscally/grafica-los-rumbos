@@ -2,13 +2,24 @@
 const Category = require('../models/category.model');
 const Product = require('../models/product.model');
 
+function generateSlug(name) {
+  return name
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+}
+
 const categoryController = {
   // Obtener todas las categorias con sus subcategorias
   async getCategories(req, res) {
     try {
-      const { includeSubcategories = true, onlyActive = false } = req.query;
-      
+      const { includeSubcategories = true, onlyActive = false, includeHidden = false } = req.query;
+
       const query = onlyActive ? { isActive: true } : {};
+      if (includeHidden !== 'true') {
+        query.hidden = { $ne: true };
+      }
       
       if (includeSubcategories === 'false') {
         query.parentCategory = null;
@@ -50,30 +61,56 @@ const categoryController = {
     }
   },
 
+  // Obtener categoria por slug (para páginas ocultas)
+  async getCategoryBySlug(req, res) {
+    try {
+      const category = await Category.findOne({ slug: req.params.slug, hidden: true })
+        .populate('subcategories');
+
+      if (!category) {
+        return res.status(404).json({ message: 'Categoria no encontrada' });
+      }
+
+      res.json(category);
+    } catch (error) {
+      res.status(500).json({ message: 'Error al obtener categoria', error: error.message });
+    }
+  },
+
   // Crear nueva categoria
   async createCategory(req, res) {
     try {
-      const { name, description, icon, parentCategory, order } = req.body;
-      
+      const { name, description, icon, parentCategory, order, hidden } = req.body;
+
       let level = 1;
+      let parentDoc = null;
       if (parentCategory) {
-        const parent = await Category.findById(parentCategory);
-        if (!parent) {
+        parentDoc = await Category.findById(parentCategory);
+        if (!parentDoc) {
           return res.status(400).json({ message: 'Categoria padre no encontrada' });
         }
-        if (parent.level !== 1) {
+        if (parentDoc.level !== 1) {
           return res.status(400).json({ message: 'Solo se permiten dos niveles de categorias' });
         }
         level = 2;
       }
-      
+
+      let isHidden = hidden === true || hidden === 'true';
+
+      // Si el padre es oculto, la subcategoría debe ser oculta obligatoriamente
+      if (parentDoc && parentDoc.hidden) {
+        isHidden = true;
+      }
+
       const category = new Category({
         name,
         description,
         icon: icon || 'fas fa-folder',
         parentCategory: parentCategory || null,
         level,
-        order: order || 0
+        order: order || 0,
+        hidden: isHidden,
+        slug: isHidden ? generateSlug(name) : undefined
       });
       
       await category.save();
@@ -89,7 +126,7 @@ const categoryController = {
   // Actualizar categoria
   async updateCategory(req, res) {
     try {
-      const { name, description, icon, parentCategory, order, isActive } = req.body;
+      const { name, description, icon, parentCategory, order, isActive, hidden } = req.body;
       
       const category = await Category.findById(req.params.id);
       
@@ -97,13 +134,14 @@ const categoryController = {
         return res.status(404).json({ message: 'Categoria no encontrada' });
       }
       
+      let parentDoc = null;
       if (parentCategory !== undefined && parentCategory !== category.parentCategory) {
         if (parentCategory) {
-          const parent = await Category.findById(parentCategory);
-          if (!parent) {
+          parentDoc = await Category.findById(parentCategory);
+          if (!parentDoc) {
             return res.status(400).json({ message: 'Categoria padre no encontrada' });
           }
-          if (parent.level !== 1) {
+          if (parentDoc.level !== 1) {
             return res.status(400).json({ message: 'Solo se permiten dos niveles de categorias' });
           }
           category.level = 2;
@@ -111,13 +149,32 @@ const categoryController = {
           category.level = 1;
         }
         category.parentCategory = parentCategory;
+      } else if (category.parentCategory) {
+        parentDoc = await Category.findById(category.parentCategory);
       }
-      
+
       if (name !== undefined) category.name = name;
       if (description !== undefined) category.description = description;
       if (icon !== undefined) category.icon = icon;
       if (order !== undefined) category.order = order;
       if (isActive !== undefined) category.isActive = isActive;
+
+      // Si el padre es oculto, forzar oculta
+      if (parentDoc && parentDoc.hidden) {
+        category.hidden = true;
+        if (!category.slug) {
+          category.slug = generateSlug(name || category.name);
+        }
+      } else if (hidden !== undefined) {
+        const isHidden = hidden === true || hidden === 'true';
+        category.hidden = isHidden;
+        if (isHidden && !category.slug) {
+          category.slug = generateSlug(name || category.name);
+        }
+        if (!isHidden) {
+          category.slug = undefined;
+        }
+      }
       
       await category.save();
       res.json(category);
@@ -169,7 +226,7 @@ const categoryController = {
   async getCategoryProducts(req, res) {
     try {
       const categoryId = req.params.id;
-      const { page = 1, limit = 12, sort = 'name', minPrice, maxPrice } = req.query;
+      const { page = 1, limit = 12, sort = 'name', minPrice, maxPrice, search, year, subject } = req.query;
       
       const category = await Category.findById(categoryId);
       if (!category) {
@@ -180,6 +237,19 @@ const categoryController = {
         ? { category: categoryId }
         : { subcategory: categoryId };
       
+      // FILTROS DE AÑO Y MATERIA
+      if (year) query.year = year;
+      if (subject) query.subject = { $regex: subject, $options: 'i' };
+
+      // FILTRO DE BÚSQUEDA
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+          { code: { $regex: search, $options: 'i' } }
+        ];
+      }
+
       // FILTRO DE PRECIO
       if (minPrice || maxPrice) {
         query.price = {};

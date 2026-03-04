@@ -34,6 +34,15 @@ const categorySchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  hidden: {
+    type: Boolean,
+    default: false // Si true, no aparece en la landing pública
+  },
+  slug: {
+    type: String,
+    unique: true,
+    sparse: true // Solo las categorías ocultas tienen slug
+  },
   productCount: {
     type: Number,
     default: 0 // Contador de productos en esta categoría

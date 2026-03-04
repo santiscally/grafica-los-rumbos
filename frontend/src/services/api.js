@@ -46,6 +46,11 @@ export const categoryService = {
     const response = await api.get(`/categories/${id}`);
     return response.data;
   },
+
+  getCategoryBySlug: async (slug) => {
+    const response = await api.get(`/categories/slug/${slug}`);
+    return response.data;
+  },
   
   getCategoryProducts: async (categoryId, params = {}) => {
     const response = await api.get(`/categories/${categoryId}/products`, { params });

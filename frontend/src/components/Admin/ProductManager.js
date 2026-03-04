@@ -47,7 +47,7 @@ const ProductManager = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const data = await productService.getProducts();
+      const data = await productService.getProducts({ includeHidden: 'true', limit: 500 });
       setProducts(data);
       setError(null);
     } catch (err) {
@@ -60,7 +60,7 @@ const ProductManager = () => {
 
   const fetchCategories = async () => {
     try {
-      const data = await categoryService.getCategories();
+      const data = await categoryService.getCategories({ includeHidden: 'true' });
       setCategories(data);
     } catch (err) {
       console.error('Error al cargar categorías:', err);

@@ -18,11 +18,12 @@ const productController = {
         maxPrice,
         sort = '-createdAt',
         page = 1,
-        limit = 12
+        limit = 12,
+        includeHidden
       } = req.query;
 
-      const query = {};
-      
+      let query = {};
+
       // Filtros antiguos (compatibilidad)
       if (year) query.year = year;
       if (subject) query.subject = subject;
@@ -49,12 +50,27 @@ const productController = {
         if (maxPrice) query.price.$lte = parseFloat(maxPrice);
       }
       
+      // Excluir productos de categorías ocultas cuando no se filtra por categoría específica
+      if (!category && !subcategory && includeHidden !== 'true') {
+        const hiddenCats = await Category.find({ hidden: true }).select('_id');
+        if (hiddenCats.length > 0) {
+          const hiddenIds = hiddenCats.map(c => c._id);
+          const hiddenFilter = {
+            $and: [
+              { category: { $nin: hiddenIds } },
+              { $or: [{ subcategory: null }, { subcategory: { $nin: hiddenIds } }] }
+            ]
+          };
+          query = { ...query, ...hiddenFilter };
+        }
+      }
+
       const products = await Product.find(query)
         .populate('category subcategory')
         .sort(sort)
         .skip((page - 1) * limit)
         .limit(parseInt(limit));
-      
+
       const total = await Product.countDocuments(query);
       
       res.json({
@@ -222,11 +238,18 @@ const productController = {
   // Obtener productos destacados
   async getFeaturedProducts(req, res) {
     try {
-      const products = await Product.find({ featured: true })
+      const hiddenCats = await Category.find({ hidden: true }).select('_id');
+      const hiddenIds = hiddenCats.map(c => c._id);
+      const hiddenFilter = hiddenIds.length > 0 ? {
+        category: { $nin: hiddenIds },
+        $or: [{ subcategory: null }, { subcategory: { $nin: hiddenIds } }]
+      } : {};
+
+      const products = await Product.find({ featured: true, ...hiddenFilter })
         .populate('category subcategory')
         .limit(8)
         .sort('-createdAt');
-      
+
       res.json(products);
     } catch (error) {
       res.status(500).json({ message: 'Error al obtener productos destacados', error: error.message });
@@ -238,14 +261,22 @@ const productController = {
     try {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
+
+      const hiddenCats = await Category.find({ hidden: true }).select('_id');
+      const hiddenIds = hiddenCats.map(c => c._id);
+      const hiddenFilter = hiddenIds.length > 0 ? {
+        category: { $nin: hiddenIds },
+        $or: [{ subcategory: null }, { subcategory: { $nin: hiddenIds } }]
+      } : {};
+
       const products = await Product.find({
-        createdAt: { $gte: thirtyDaysAgo }
+        createdAt: { $gte: thirtyDaysAgo },
+        ...hiddenFilter
       })
         .populate('category subcategory')
         .limit(8)
         .sort('-createdAt');
-      
+
       res.json(products);
     } catch (error) {
       res.status(500).json({ message: 'Error al obtener productos nuevos', error: error.message });

@@ -25,6 +25,8 @@ const LandingEShopper = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [viewMode, setViewMode] = useState('home');
+  const [cartToast, setCartToast] = useState(null);
+  const cartToastTimer = React.useRef(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -138,7 +140,7 @@ const LandingEShopper = () => {
   const addToCart = (product) => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     const existingItem = cart.find(item => item.productId === product._id);
-    
+
     if (existingItem) {
       existingItem.quantity += 1;
     } else {
@@ -150,9 +152,13 @@ const LandingEShopper = () => {
         image: product.imageUrl
       });
     }
-    
+
     localStorage.setItem('cart', JSON.stringify(cart));
     window.dispatchEvent(new Event('cartUpdated'));
+
+    if (cartToastTimer.current) clearTimeout(cartToastTimer.current);
+    setCartToast({ name: product.name, image: getProductImage(product) });
+    cartToastTimer.current = setTimeout(() => setCartToast(null), 3000);
   };
 
   const formatPrice = (price) => {
@@ -779,6 +785,22 @@ const LandingEShopper = () => {
       )}
 
       <Footer />
+
+      {/* Toast de carrito */}
+      {cartToast && (
+        <div className="cart-toast">
+          <img src={cartToast.image} alt="" className="cart-toast-img" onError={(e) => { e.target.style.display = 'none'; }} />
+          <div className="cart-toast-body">
+            <span className="cart-toast-title">
+              <i className="fas fa-check-circle"></i> Agregado al carrito
+            </span>
+            <span className="cart-toast-name">{cartToast.name}</span>
+          </div>
+          <button className="cart-toast-close" onClick={() => setCartToast(null)}>
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
